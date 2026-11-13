@@ -39,3 +39,45 @@ export function compileTree(tree, meta = {}) {
   const compiler = new Compiler(flags, meta.source ?? '');
   return compiler.run(tree, meta);
 }
+
+/** Checks the flags and returns them as a set of booleans. */
+export function normalizeFlags(flags, source = '') {
+  const known = new Set(['i', 's', 'm']);
+  const seen = new Set();
+
+  for (const flag of String(flags)) {
+    if (!known.has(flag)) fail(`'${flag}' is not a flag this engine knows`, 0, source);
+    if (seen.has(flag)) fail(`the flag '${flag}' is given twice`, 0, source);
+    seen.add(flag);
+  }
+
+  return {
+    text: [...seen].sort().join(''),
+    ignoreCase: seen.has('i'),
+    dotAll: seen.has('s'),
+    multiline: seen.has('m'),
+  };
+}
+
+/**
+ * Adds the other case of every letter in a set.
+ *
+ * Only the two cased alphabets are folded. Doing it properly for every
+ * script in Unicode is a table this project has no business carrying, and
+ * saying so is better than pretending otherwise.
+ */
+export function foldCase(ranges) {
+  const folded = [...ranges];
+
+  for (const [lo, hi] of ranges) {
+    for (let code = lo; code <= hi && code < 0x80; code += 1) {
+      const character = String.fromCodePoint(code);
+      const lower = character.toLowerCase();
+      const upper = character.toUpperCase();
+      if (lower !== character) folded.push(range(lower));
+      if (upper !== character) folded.push(range(upper));
+    }
+  }
+
+  return normalize(folded);
+}
