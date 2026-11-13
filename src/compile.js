@@ -32,3 +32,10 @@ export function compile(pattern, flags = '') {
     names: parser.names,
   });
 }
+
+/** Compiles an already-parsed tree. */
+export function compileTree(tree, meta = {}) {
+  const flags = normalizeFlags(meta.flags ?? '', meta.source ?? '');
+  const compiler = new Compiler(flags, meta.source ?? '');
+  return compiler.run(tree, meta);
+}
