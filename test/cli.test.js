@@ -296,4 +296,41 @@ test('a bad pattern is reported with a caret and exits one', () => {
   assert.match(result.err, /never closed/);
   assert.match(result.err, /\^/);
 });
-)
+
+test('a bad pattern as json is reported as data', () => {
+  const result = invoke('explain', 'a[b', '--json');
+  assert.equal(result.code, 1);
+  const data = JSON.parse(result.out);
+  assert.equal(data.offset, 1);
+  assert.match(data.error, /never closed/);
+});
+
+test('an unsupported feature is reported as a pattern error, not a crash', () => {
+  for (const pattern of ['(?=a)', '(a)\\1']) {
+    const result = invoke('match', pattern, 'a');
+    assert.equal(result.code, 1, pattern);
+    assert.match(result.err, /not supported/);
+  }
+});
+
+test('a bad flag is reported like a bad pattern', () => {
+  const result = invoke('match', 'a', 'a', '-f', 'q');
+  assert.equal(result.code, 1);
+  assert.match(result.err, /not a flag/);
+});
+
+// ---- colour ----
+
+test('output is not coloured when it is not a terminal', () => {
+  assert.ok(!invoke('explain', 'a+').out.includes('\u001b['));
+});
+
+test('colour can be forced on', () => {
+  assert.ok(invoke('explain', 'a+', '--color').out.includes('\u001b['));
+});
+
+test('colour can be forced off even when it would be on', () => {
+  const out = [];
+  run(['explain', 'a+', '--no-color'], { out: (text) => out.push(text), tty: true });
+  assert.ok(!out.join('\n').includes('\u001b['));
+});
