@@ -217,4 +217,43 @@ test('a trace says how much work it took', () => {
   const result = search(compile('a+'), 'aa', { trace: true });
   assert.match(renderTrace(result, 'aa', false), /thread additions/);
 });
-))
+
+test('the end of the input is labelled rather than left blank', () => {
+  const result = search(compile('a'), 'a', { trace: true });
+  assert.match(renderTrace(result, 'a', false), /end/);
+});
+
+// ---- the analysis ----
+
+test('an analysis states the linear bound in words', () => {
+  const text = renderAnalysis(analyse(parse('a+'), compile('a+')), false);
+  assert.match(text, /linear in the length of the input/);
+});
+
+test('an analysis with nothing to say says so', () => {
+  const text = renderAnalysis(analyse(parse('^a$'), compile('^a$')), false);
+  assert.match(text, /nothing to warn about/);
+});
+
+test('an analysis prints each warning with its reason', () => {
+  const text = renderAnalysis(analyse(parse('(a+)+b'), compile('(a+)+b')), false);
+  assert.match(text, /warning/);
+  assert.match(text, /exponential/);
+});
+
+test('an analysis never ends in blank lines', () => {
+  const text = renderAnalysis(analyse(parse('(a+)+b'), compile('(a+)+b')), false);
+  assert.equal(text, text.trimEnd());
+});
+
+// ---- the sentence ----
+
+test('a sentence is wrapped and ends in a full stop', () => {
+  const text = renderSentence(parse('^(\\d{4})-(\\d{2})$'), 40);
+  assert.ok(text.split('\n').every((line) => line.length <= 40));
+  assert.ok(text.endsWith('.'));
+});
+
+test('a sentence starts by saying what it is', () => {
+  assert.match(renderSentence(parse('a')), /^This matches/);
+});
