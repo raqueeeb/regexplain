@@ -53,3 +53,44 @@ test('a quantifier beside a quantifier is not nested', () => {
 test('a quantifier nested two levels down is still found', () => {
   assert.equal(nestedQuantifiers(parse('((a+)x)+')).length, 1);
 });
+
+test('an optional around a repetition is not the dangerous shape', () => {
+  // `(a+)?` can only enter the body once, so there is nothing to divide.
+  assert.equal(nestedQuantifiers(parse('(a+)?')).length, 0);
+});
+
+test('a counted repetition of one is not a repetition', () => {
+  assert.equal(nestedQuantifiers(parse('(a+){1}')).length, 0);
+});
+
+// ---- nullable repetitions ----
+
+test('a repetition of something that can match nothing is found', () => {
+  assert.equal(nullableRepeats(parse('(a*)*')).length, 1);
+});
+
+test('a repetition of something that must consume input is fine', () => {
+  assert.equal(nullableRepeats(parse('(a+)*')).length, 0);
+});
+
+test('a repetition of an alternation with an empty branch is found', () => {
+  assert.equal(nullableRepeats(parse('(a|)*')).length, 1);
+});
+
+test('the warning says why it is almost always a mistake', () => {
+  const [finding] = findings(parse('(a?)*'));
+  assert.match(finding.why, /consume no input/);
+});
+
+// ---- notes ----
+
+test('a great many capturing groups is a note, not a warning', () => {
+  const pattern = '(a)'.repeat(10);
+  const notes = findings(parse(pattern)).filter((each) => each.severity === Severity.NOTE);
+  assert.ok(notes.some((each) => /capturing groups/.test(each.what)));
+});
+
+test('several unnamed groups suggests naming them', () => {
+  const notes = findings(parse('(a)(b)(c)'));
+  assert.ok(notes.some((each) => /unnamed capturing groups/.test(each.what)));
+});
