@@ -247,3 +247,11 @@ export class Machine {
 export function isWord(character) {
   return character !== null && character !== undefined && WORD.test(character);
 }
+
+/** The name of a group, or `null`. */
+function nameOf(names, index) {
+  for (const [name, at] of names) {
+    if (at === index) return name;
+  }
+  return null;
+}
