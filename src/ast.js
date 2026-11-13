@@ -65,3 +65,40 @@ export function concat(parts) {
   if (parts.length === 1) return parts[0];
   return { type: NodeType.CONCAT, parts };
 }
+
+/** One thing or another, preferring the earlier option. */
+export function alternate(options) {
+  if (options.length === 1) return options[0];
+  return { type: NodeType.ALTERNATE, options };
+}
+
+/**
+ * A repetition.
+ *
+ * `max` is `null` for an unbounded one, and `lazy` means the quantifier
+ * prefers to stop rather than to continue, which is the only difference
+ * between `a+` and `a+?`.
+ */
+export function repeat(node, min, max, lazy = false) {
+  return { type: NodeType.REPEAT, node, min, max, lazy };
+}
+
+/** A group, capturing when it has an index. */
+export function group(node, index = null, name = null) {
+  return { type: NodeType.GROUP, node, index, name };
+}
+
+/** The children of a node, in the order they appear in the pattern. */
+export function childrenOf(node) {
+  switch (node.type) {
+    case NodeType.CONCAT:
+      return node.parts;
+    case NodeType.ALTERNATE:
+      return node.options;
+    case NodeType.REPEAT:
+    case NodeType.GROUP:
+      return [node.node];
+    default:
+      return [];
+  }
+}
