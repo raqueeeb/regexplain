@@ -87,3 +87,63 @@ export function describeRepeat(node) {
   if (min === max) return `exactly ${min} times`;
   return `between ${min} and ${max} times${preference}`;
 }
+
+/** A character for prose, quoted and with the invisible ones named. */
+export function quote(character) {
+  const code = character.codePointAt(0);
+  if (code < 32 || code === 127) return describeCode(code);
+  if (character === ' ') return 'a space';
+  return `'${character}'`;
+}
+
+/** The tree as indented lines, each with its summary. */
+export function outline(node, depth = 0) {
+  const lines = [`${'  '.repeat(depth)}${summarise(node)}`];
+  for (const child of childrenOf(node)) lines.push(...outline(child, depth + 1));
+  return lines;
+}
+
+/**
+ * The whole pattern as one sentence.
+ *
+ * Recursive, and deliberately a little repetitive: prose that tries to be
+ * elegant about nesting ends up ambiguous, and an explanation that is
+ * ambiguous is worse than one that is wordy.
+ */
+export function sentence(node) {
+  switch (node.type) {
+    case NodeType.EMPTY:
+      return 'nothing';
+
+    case NodeType.LITERAL:
+      return quote(node.char);
+
+    case NodeType.CLASS:
+      return describeClass(node);
+
+    case NodeType.ANY:
+      return 'any character except a newline';
+
+    case NodeType.ANCHOR:
+      return ANCHORS[node.kind] ?? node.kind;
+
+    case NodeType.CONCAT:
+      return joinWith(node.parts.map((part) => sentence(part)), 'then');
+
+    case NodeType.ALTERNATE:
+      return `either ${joinWith(node.options.map((option) => sentence(option)), 'or')}`;
+
+    case NodeType.REPEAT:
+      return `${sentence(node.node)}, ${describeRepeat(node)}`;
+
+    case NodeType.GROUP: {
+      const inner = sentence(node.node);
+      if (node.name) return `${inner} (captured as '${node.name}')`;
+      if (node.index !== null) return `${inner} (captured as group ${node.index})`;
+      return inner;
+    }
+
+    default:
+      return node.type;
+  }
+}
