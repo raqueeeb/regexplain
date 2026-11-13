@@ -142,4 +142,34 @@ test('the root has no connector of its own', () => {
 });
 
 // ---- headings and carets ----
+
+test('a heading is underlined to its own width', () => {
+  const [title, rule] = heading('abcd', false).split('\n');
+  assert.equal(rule.length, title.length);
+});
+
+test('a caret sits under the offset it names', () => {
+  const [line, pointer] = caret('abcd', 2, false).split('\n');
+  assert.equal(pointer.indexOf('^'), line.indexOf('c'));
+});
+
+test('a caret at offset zero is still inside the output', () => {
+  assert.ok(caret('abcd', 0, false).includes('^'));
+});
+
+// ---- matches ----
+
+test('a match shows where it matched', () => {
+  const text = renderMatch(search(compile('b+'), 'abbc'), 'abbc', false);
+  assert.match(text, /match at 1–3/);
+});
+
+test('a failed match says so', () => {
+  assert.match(renderMatch(search(compile('z'), 'abc'), 'abc', false), /no match/);
+});
+
+test('an empty match is shown as a mark rather than as nothing', () => {
+  const text = renderMatch(search(compile('a*'), 'bbb'), 'bbb', false);
+  assert.ok(text.includes('∅'));
+});
 ))
