@@ -47,3 +47,48 @@ test('json is a switch', () => {
   assert.equal(parseArgs(['explain', 'a', '-j']).options.json, true);
   assert.equal(parseArgs(['explain', 'a']).options.json, false);
 });
+
+test('colour can be forced either way', () => {
+  assert.equal(parseArgs(['explain', 'a', '--color']).options.colour, true);
+  assert.equal(parseArgs(['explain', 'a', '--no-color']).options.colour, false);
+  assert.equal(parseArgs(['explain', 'a']).options.colour, null);
+});
+
+test('help and version can be asked for as options', () => {
+  assert.equal(parseArgs(['--help']).command, 'help');
+  assert.equal(parseArgs(['--version']).command, 'version');
+});
+
+test('a pattern that looks like an option is still a pattern', () => {
+  // `-?` is a perfectly good pattern, and it follows a command, so there is
+  // no ambiguity to resolve.
+  assert.deepEqual(parseArgs(['explain', '-?']).positional, ['-?']);
+});
+
+// ---- help and version ----
+
+test('help lists every command', () => {
+  const result = invoke('help');
+  assert.equal(result.code, 0);
+  for (const name of Object.keys(COMMANDS)) {
+    assert.match(result.out, new RegExp(`\\b${name}\\b`), `${name} is not in the help`);
+  }
+});
+
+test('help says what the engine will not do', () => {
+  assert.match(usage(), /no backreferences and no lookaround/);
+});
+
+test('version prints a version', () => {
+  const result = invoke('version');
+  assert.equal(result.code, 0);
+  assert.match(result.out.trim(), /^\d+\.\d+\.\d+$/);
+});
+
+test('the version matches the one in the package', async () => {
+  const { readFileSync } = await import('node:fs');
+  const packaged = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.equal(packaged.version, VERSION);
+});
+
+// ---- bad usage ----
