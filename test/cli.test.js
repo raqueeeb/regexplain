@@ -134,3 +134,41 @@ test('explain shows the structure as a tree', () => {
   assert.match(result.out, /Structure/);
   assert.match(result.out, /└─/);
 });
+
+test('explain lists the captures', () => {
+  const result = invoke('explain', '(?<year>\\d{4})');
+  assert.match(result.out, /Captures/);
+  assert.match(result.out, /year/);
+});
+
+test('explain lists no captures when there are none', () => {
+  assert.doesNotMatch(invoke('explain', 'abc').out, /Captures/);
+});
+
+test('explain says what the flags do', () => {
+  const result = invoke('explain', 'a', '-f', 'i');
+  assert.match(result.out, /Flags/);
+  assert.match(result.out, /either case/);
+});
+
+test('explain as json carries the tree', () => {
+  const result = invoke('explain', 'a+', '--json');
+  const data = JSON.parse(result.out);
+  assert.equal(data.pattern, 'a+');
+  assert.equal(data.tree.type, 'repeat');
+  assert.match(data.sentence, /one or more/);
+});
+
+// ---- match ----
+
+test('match reports a match and exits zero', () => {
+  const result = invoke('match', 'b+', 'abbc');
+  assert.equal(result.code, 0);
+  assert.match(result.out, /match at 1–3/);
+});
+
+test('match reports no match and exits one', () => {
+  const result = invoke('match', 'z', 'abc');
+  assert.equal(result.code, 1);
+  assert.match(result.out, /no match/);
+});
