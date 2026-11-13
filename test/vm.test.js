@@ -349,3 +349,47 @@ test('a trace has one entry per input position considered', () => {
   assert.equal(result.trace.length, 4);
   assert.equal(result.trace[0].position, 0);
 });
+
+test('a trace records the program counters that were alive', () => {
+  const result = search(compile('ab'), 'ab', { trace: true });
+  assert.ok(result.trace.every((step) => Array.isArray(step.counters)));
+});
+
+test('a trace is empty unless it was asked for', () => {
+  assert.deepEqual(search(compile('a'), 'a').trace, []);
+});
+
+test('a machine can be used directly', () => {
+  const machine = new Machine(compile('a+'));
+  const result = machine.run('aaa');
+  assert.equal(result.text, 'aaa');
+  assert.ok(machine.steps > 0);
+});
+
+// ---- patterns somebody would actually write ----
+
+test('a date pattern pulls a date apart', () => {
+  const result = search(compile('^(\\d{4})-(\\d{2})-(\\d{2})$'), '2026-11-13');
+  assert.deepEqual(result.groups.map((group) => group.text), ['2026', '11', '13']);
+});
+
+test('an address pattern pulls an address apart', () => {
+  const result = search(compile('(?<user>[\\w.]+)@(?<host>[\\w.]+)'), 'write to bob.smith@example.com now');
+  assert.equal(result.groups[0].text, 'bob.smith');
+  assert.equal(result.groups[1].text, 'example.com');
+});
+
+test('a quoted-string pattern stops at the first closing quote', () => {
+  assert.equal(found('"[^"]*"', 'a "one" and "two"'), '"one"');
+});
+
+test('a number pattern reads a decimal', () => {
+  assert.equal(found('-?\\d+(\\.\\d+)?', 'x -12.75 y'), '-12.75');
+});
+
+test('a hex colour pattern checks its length', () => {
+  const program = compile('^#(?:[0-9a-f]{3}|[0-9a-f]{6})$', 'i');
+  assert.equal(matches(program, '#FFF'), true);
+  assert.equal(matches(program, '#ff8800'), true);
+  assert.equal(matches(program, '#ff88'), false);
+});
