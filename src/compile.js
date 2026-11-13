@@ -20,3 +20,15 @@ import { Parser, parse } from './parser.js';
 
 /** The largest program we will build, so a count cannot exhaust memory. */
 export const MAX_PROGRAM = 20000;
+
+/** Compiles a pattern straight from its text. */
+export function compile(pattern, flags = '') {
+  const parser = new Parser(String(pattern));
+  const tree = parser.parse();
+  return compileTree(tree, {
+    flags,
+    source: String(pattern),
+    groups: parser.groups,
+    names: parser.names,
+  });
+}
