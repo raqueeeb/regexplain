@@ -121,3 +121,75 @@ export function parseArgs(argv) {
 
   return { command: positional[0] ?? 'help', positional: positional.slice(1), options };
 }
+
+/** Runs the command line and returns an exit code. */
+export function run(argv, io = {}) {
+  const out = io.out ?? ((text) => process.stdout.write(`${text}\n`));
+  const err = io.err ?? ((text) => process.stderr.write(`${text}\n`));
+  const { command, positional, options } = parseArgs(argv);
+  const colour = options.colour ?? Boolean(io.tty);
+
+  if (options.unknown) {
+    err(`regexplain: ${options.unknown} is not an option`);
+    err("try 'regexplain help'");
+    return 2;
+  }
+
+  if (command === 'help') {
+    out(usage());
+    return 0;
+  }
+  if (command === 'version') {
+    out(VERSION);
+    return 0;
+  }
+  if (!(command in COMMANDS)) {
+    err(`regexplain: '${command}' is not a command`);
+    err("try 'regexplain help'");
+    return 2;
+  }
+
+  const [pattern, text] = positional;
+  if (pattern === undefined) {
+    err(`regexplain: ${command} needs a pattern`);
+    return 2;
+  }
+  if ((command === 'match' || command === 'trace' || command === 'all') && text === undefined) {
+    err(`regexplain: ${command} needs a pattern and a text`);
+    return 2;
+  }
+
+  try {
+    return dispatch(command, pattern, text, { ...options, colour }, out);
+  } catch (caught) {
+    if (!(caught instanceof PatternError)) throw caught;
+    if (options.json) {
+      out(JSON.stringify(caught.toJSON(), null, 2));
+      return 1;
+    }
+    const paint = palette(colour);
+    err(`regexplain: ${paint.red(caught.message)}`);
+    err(caret(caught.pattern, caught.offset, colour));
+    return 1;
+  }
+}
+
+/** Does the work for one command. */
+function dispatch(command, pattern, text, options, out) {
+  switch (command) {
+    case 'explain':
+      return explainCommand(pattern, options, out);
+    case 'match':
+      return matchCommand(pattern, text, options, out);
+    case 'all':
+      return allCommand(pattern, text, options, out);
+    case 'trace':
+      return traceCommand(pattern, text, options, out);
+    case 'compile':
+      return compileCommand(pattern, options, out);
+    case 'cost':
+      return costCommand(pattern, options, out);
+    default:
+      return 2;
+  }
+}
