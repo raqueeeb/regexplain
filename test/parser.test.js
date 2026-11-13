@@ -185,4 +185,40 @@ test('a group captures and is numbered from one', () => {
   const groups = groupsOf(tree);
   assert.deepEqual(groups.map((group) => group.index), [1, 2]);
 });
+
+test('groups are numbered by where they open, not where they close', () => {
+  const groups = groupsOf(parse('((a)(b))'));
+  assert.deepEqual(groups.map((group) => group.index), [1, 2, 3]);
+});
+
+test('a non-capturing group has no index', () => {
+  const tree = parse('(?:a)');
+  assert.equal(tree.index, null);
+  assert.equal(groupsOf(tree).length, 0);
+});
+
+test('a named group has a name and an index', () => {
+  const tree = parse('(?<year>a)');
+  assert.equal(tree.name, 'year');
+  assert.equal(tree.index, 1);
+});
+
+test('two groups cannot share a name', () => {
+  assert.match(refusal('(?<a>x)(?<a>y)').message, /two groups called/);
+});
+
+test('a group name has to look like a name', () => {
+  assert.match(refusal('(?<1a>x)').message, /not a usable group name/);
+  assert.match(refusal('(?<>x)').message, /needs a name/);
+});
+
+test('an unclosed group is refused, naming where it opened', () => {
+  const error = refusal('a(bc');
+  assert.match(error.message, /never closed/);
+  assert.equal(error.offset, 1);
+});
+
+test('an unopened group is refused', () => {
+  assert.match(refusal('a)').message, /unexpected/);
+});
 )})
