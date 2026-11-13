@@ -263,4 +263,46 @@ test('a named class inside a class joins the set', () => {
   assert.ok(tree.ranges.some(([lo, hi]) => lo === 48 && hi === 57));
   assert.ok(tree.ranges.some(([lo]) => lo === 45));
 });
-})
+
+test('a negated named class inside a class is everything else', () => {
+  const tree = parse('[\\D]');
+  assert.equal(tree.negated, false);
+  assert.ok(tree.ranges.length > 1);
+});
+
+test('a class range that counts down is refused', () => {
+  assert.match(refusal('[z-a]').message, /counts down/);
+});
+
+test('a named class cannot be one end of a range', () => {
+  assert.match(refusal('[\\d-z]').message, /cannot be the end of a range/);
+});
+
+test('an unclosed class is refused', () => {
+  assert.match(refusal('[abc').message, /never closed/);
+  assert.match(refusal('[]').message, /never closed/);
+});
+
+// ---- escapes ----
+
+test('an escaped special character is that character', () => {
+  assert.equal(parse('\\.').char, '.');
+  assert.equal(parse('\\*').char, '*');
+  assert.equal(parse('\\\\').char, '\\');
+});
+
+test('the control escapes are their characters', () => {
+  assert.equal(parse('\\n').char, '\n');
+  assert.equal(parse('\\t').char, '\t');
+  assert.equal(parse('\\r').char, '\r');
+});
+
+test('a hex escape names a character', () => {
+  assert.equal(parse('\\x41').char, 'A');
+});
+
+test('a unicode escape names a character', () => {
+  assert.equal(parse('\\u0041').char, 'A');
+  assert.equal(parse('\\u{1F600}').char, '\u{1F600}');
+});
+)})
