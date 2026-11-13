@@ -165,3 +165,45 @@ test('the invisible characters are named', () => {
   assert.equal(describeCode(32), 'space');
   assert.equal(describeCode(0), '\\0');
 });
+
+test('an unprintable character describes as hex', () => {
+  assert.equal(describeCode(1), '\\x01');
+  assert.equal(describeCode(127), '\\x7f');
+});
+
+// ---- the named classes ----
+
+test('a digit is nought to nine and nothing else', () => {
+  assert.deepEqual(NAMED.d.ranges, [[48, 57]]);
+});
+
+test('a word character is a letter, a digit or an underscore', () => {
+  const { ranges } = NAMED.w;
+  for (const character of ['a', 'Z', '5', '_']) {
+    assert.ok(contains(ranges, character.codePointAt(0)), `${character} should be a word character`);
+  }
+  assert.ok(!contains(ranges, '-'.codePointAt(0)));
+});
+
+test('whitespace includes a tab, a newline and a non-breaking space', () => {
+  const { ranges } = NAMED.s;
+  for (const code of [9, 10, 32, 0xa0]) {
+    assert.ok(contains(ranges, code), `${code} should be whitespace`);
+  }
+});
+
+test('a lower-case named class is the set', () => {
+  const named = namedClass('d');
+  assert.equal(named.negated, false);
+  assert.equal(named.about, 'a digit');
+});
+
+test('an upper-case named class is its complement', () => {
+  const named = namedClass('D');
+  assert.equal(named.negated, true);
+  assert.equal(named.about, 'not a digit');
+});
+
+test('a letter that names no class is not one', () => {
+  assert.equal(namedClass('q'), null);
+});
