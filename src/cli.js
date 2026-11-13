@@ -33,3 +33,15 @@ import {
 
 /** The version, kept in step with package.json by a test. */
 export const VERSION = '1.0.0';
+
+/** What the tool can be asked to do. */
+export const COMMANDS = {
+  explain: 'describe a pattern in words and as a tree',
+  match: 'match a pattern against a text and show the captures',
+  all: 'show every non-overlapping match in a text',
+  trace: 'show the thread list at each input position',
+  compile: 'disassemble a pattern into the program the machine runs',
+  cost: 'report the size of a pattern and anything worth warning about',
+  help: 'print this help',
+  version: 'print the version',
+};
