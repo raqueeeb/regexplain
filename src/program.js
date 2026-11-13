@@ -9,3 +9,28 @@
  * Instructions are plain objects. `disassemble` prints them, which turns a
  * regex into something you can read a line at a time.
  */
+
+/** Every opcode. */
+export const Op = {
+  /** Consume one specific character. */
+  CHAR: 'char',
+  /** Consume one character from a set. */
+  CLASS: 'class',
+  /** Consume any one character. */
+  ANY: 'any',
+  /** Try `x` first, then `y`, at the same input position. */
+  SPLIT: 'split',
+  /** Continue at `target`. */
+  JMP: 'jmp',
+  /** Record the current position in a capture slot. */
+  SAVE: 'save',
+  /** Check a position without consuming anything. */
+  ASSERT: 'assert',
+  /** The pattern has matched. */
+  MATCH: 'match',
+};
+
+/** Whether an opcode consumes a character. */
+export function consumes(op) {
+  return op === Op.CHAR || op === Op.CLASS || op === Op.ANY;
+}
