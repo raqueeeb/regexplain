@@ -194,3 +194,47 @@ test('the i flag leaves a literal digit as a char', () => {
 });
 
 // ---- anchoring ----
+
+test('a pattern starting with a caret is anchored', () => {
+  assert.equal(startsAnchored(parse('^a')), true);
+  assert.equal(compile('^a').anchoredStart, true);
+});
+
+test('a pattern that only sometimes starts with a caret is not anchored', () => {
+  assert.equal(startsAnchored(parse('^a|b')), false);
+  assert.equal(startsAnchored(parse('(^a)*')), false);
+});
+
+test('a pattern where every option starts with a caret is anchored', () => {
+  assert.equal(startsAnchored(parse('^a|^b')), true);
+});
+
+test('a caret inside a group still anchors', () => {
+  assert.equal(startsAnchored(parse('(^a)')), true);
+});
+
+test('the m flag unanchors a pattern, because a caret then matches per line', () => {
+  assert.equal(compile('^a', 'm').anchoredStart, false);
+});
+
+// ---- the program object ----
+
+test('a program reports its length and its capture slots', () => {
+  const program = compile('(a)(b)');
+  assert.equal(program.groups, 2);
+  assert.equal(program.slots, 6);
+});
+
+test('a histogram counts the instructions by kind', () => {
+  const histogram = compile('ab').histogram();
+  assert.equal(histogram[Op.CHAR], 2);
+  assert.equal(histogram[Op.MATCH], 1);
+});
+
+test('consuming instructions are the ones that read input', () => {
+  assert.ok(consumes(Op.CHAR));
+  assert.ok(consumes(Op.CLASS));
+  assert.ok(consumes(Op.ANY));
+  assert.ok(!consumes(Op.SPLIT));
+  assert.ok(!consumes(Op.SAVE));
+});
