@@ -147,3 +147,21 @@ export function sentence(node) {
       return node.type;
   }
 }
+
+/** Joins clauses with a word, using commas for three or more. */
+function joinWith(clauses, word) {
+  if (clauses.length === 0) return 'nothing';
+  if (clauses.length === 1) return clauses[0];
+  if (clauses.length === 2) return `${clauses[0]} ${word} ${clauses[1]}`;
+  return `${clauses.slice(0, -1).join(', ')}, ${word} ${clauses[clauses.length - 1]}`;
+}
+
+/** What each flag does, for the ones that are set. */
+export function explainFlags(flags) {
+  const meanings = {
+    i: 'letters match in either case',
+    s: 'a dot matches a newline as well',
+    m: 'a ^ or $ matches at every line, not only the ends of the text',
+  };
+  return [...String(flags)].map((flag) => ({ flag, means: meanings[flag] ?? 'unknown' }));
+}
