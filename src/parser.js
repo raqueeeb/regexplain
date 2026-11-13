@@ -13,3 +13,6 @@
 import { Anchor, alternate, anchor, any, charClass, concat, empty, group, literal, repeat } from './ast.js';
 import { PatternError, fail } from './syntax-error.js';
 import { MAX_CODE_POINT, invert, namedClass, normalize, range } from './ranges.js';
+
+/** The deepest nesting a pattern may use before we refuse it. */
+export const MAX_DEPTH = 64;
