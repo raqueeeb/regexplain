@@ -172,4 +172,49 @@ test('an empty match is shown as a mark rather than as nothing', () => {
   const text = renderMatch(search(compile('a*'), 'bbb'), 'bbb', false);
   assert.ok(text.includes('∅'));
 });
+
+test('a match lists its groups with their spans', () => {
+  const text = renderMatch(search(compile('(a)(b)'), 'ab'), 'ab', false);
+  assert.match(text, /group/);
+  assert.match(text, /0–1/);
+});
+
+test('a group that did not take part says so instead of showing nothing', () => {
+  const text = renderMatch(search(compile('(a)|(b)'), 'b'), 'b', false);
+  assert.match(text, /did not take part/);
+});
+
+test('a match with no groups lists none', () => {
+  const text = renderMatch(search(compile('a'), 'a'), 'a', false);
+  assert.doesNotMatch(text, /group/);
+});
+
+// ---- the program ----
+
+test('a disassembly describes a class rather than counting its ranges', () => {
+  const text = renderProgram(compile('[a-z]'), false);
+  assert.match(text, /a-z/);
+});
+
+test('a disassembly numbers its lines', () => {
+  const text = renderProgram(compile('ab'), false);
+  assert.match(text.split('\n')[0], /^\s*0\s/);
+});
+
+// ---- the trace ----
+
+test('a trace has a header and one row per position', () => {
+  const result = search(compile('a+'), 'aa', { trace: true });
+  const lines = renderTrace(result, 'aa', false).split('\n');
+  assert.match(lines[0], /pos/);
+  // The table ends at the blank line before the summary, which also starts
+  // with a digit and would otherwise be counted as a row.
+  const rows = lines.slice(1, lines.indexOf(''));
+  assert.equal(rows.length, result.trace.length);
+});
+
+test('a trace says how much work it took', () => {
+  const result = search(compile('a+'), 'aa', { trace: true });
+  assert.match(renderTrace(result, 'aa', false), /thread additions/);
+});
 ))
