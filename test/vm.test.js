@@ -290,3 +290,62 @@ test('a search can start part way through', () => {
   const result = search(compile('a'), 'aXa', { start: 1 });
   assert.equal(result.index, 2);
 });
+
+test('a caret still means the start of the text, not the start offset', () => {
+  // Searching from an offset does not move where `^` matches, which is the
+  // same decision Python's `re` makes about its `pos` argument. Otherwise
+  // scanning a text in pieces would silently change what the pattern means.
+  assert.equal(search(compile('^a'), 'ba', { start: 1 }).matched, false);
+  assert.equal(search(compile('^b'), 'ba', { start: 0 }).matched, true);
+});
+
+// ---- the linear-time guarantee ----
+
+test('a nested quantifier takes linear work, not exponential', () => {
+  // This is the pattern that hangs a backtracking engine. Doubling the
+  // input should roughly double the work and nothing worse.
+  const program = compile('(a+)+b');
+  const small = search(program, 'a'.repeat(100)).steps;
+  const large = search(program, 'a'.repeat(200)).steps;
+  assert.ok(large < small * 3, `${small} then ${large} is not linear`);
+});
+
+test('the work is bounded by the program size times the input length', () => {
+  const program = compile('(a|aa)+c');
+  const input = 'a'.repeat(500);
+  const result = search(program, input);
+  assert.equal(result.matched, false);
+  assert.ok(result.steps <= program.length * (input.length + 1));
+});
+
+test('no more threads are alive than the program has instructions', () => {
+  const program = compile('(a|b|c)+d');
+  const result = search(program, 'abcabcabc');
+  assert.ok(result.peakThreads <= program.length);
+});
+
+test('a repetition of something nullable terminates', () => {
+  assert.equal(found('(a*)*b', 'aaab'), 'aaab');
+  assert.equal(found('(a*)*', ''), '');
+});
+
+// ---- code points ----
+
+test('an astral character counts as one character', () => {
+  const result = search(compile('.'), '\u{1F600}a');
+  assert.equal(result.text, '\u{1F600}');
+  assert.equal(result.end, 1);
+});
+
+test('positions are code-point offsets, not string indices', () => {
+  const result = search(compile('a'), '\u{1F600}a');
+  assert.equal(result.index, 1);
+});
+
+// ---- the trace ----
+
+test('a trace has one entry per input position considered', () => {
+  const result = search(compile('a+b'), 'aab', { trace: true });
+  assert.equal(result.trace.length, 4);
+  assert.equal(result.trace[0].position, 0);
+});
