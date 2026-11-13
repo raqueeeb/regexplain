@@ -51,3 +51,38 @@ test('overlapping ranges merge', () => {
 test('touching ranges merge, because a-m and n-z is a-z', () => {
   assert.deepEqual(normalize([range('a', 'm'), range('n', 'z')]), [[97, 122]]);
 });
+
+test('a range inside another disappears into it', () => {
+  assert.deepEqual(normalize([range('a', 'z'), range('m', 'p')]), [[97, 122]]);
+});
+
+test('ranges with a gap stay apart', () => {
+  assert.deepEqual(normalize([range('a', 'b'), range('d', 'e')]), [[97, 98], [100, 101]]);
+});
+
+test('normalising nothing gives nothing', () => {
+  assert.deepEqual(normalize([]), []);
+});
+
+test('two spellings of the same set normalise the same', () => {
+  const first = normalize([range('a'), range('b'), range('c')]);
+  const second = normalize([range('a', 'c')]);
+  assert.deepEqual(first, second);
+});
+
+test('normalising does not modify what it was given', () => {
+  const input = [range('m', 'p'), range('a', 'z')];
+  const copy = JSON.parse(JSON.stringify(input));
+  normalize(input);
+  assert.deepEqual(input, copy);
+});
+
+// ---- membership ----
+
+test('a character in a range is in the set', () => {
+  assert.ok(contains([range('a', 'z')], 'm'.codePointAt(0)));
+});
+
+test('a character outside every range is not', () => {
+  assert.ok(!contains([range('a', 'z')], 'A'.codePointAt(0)));
+});
