@@ -45,3 +45,79 @@ export const COMMANDS = {
   help: 'print this help',
   version: 'print the version',
 };
+
+/** The usage text. */
+export function usage() {
+  const rows = Object.entries(COMMANDS).map(([name, about]) => [`  ${name}`, about]);
+
+  return [
+    'regexplain - a regular expression engine that explains itself',
+    '',
+    'Usage:',
+    '  regexplain <command> <pattern> [text] [options]',
+    '',
+    'Commands:',
+    table(rows),
+    '',
+    'Options:',
+    table([
+      ['  -f, --flags <set>', 'any of i (ignore case), s (dot matches newline), m (multiline)'],
+      ['  -j, --json', 'print the result as JSON'],
+      ['      --no-color', 'never colour the output'],
+      ['      --color', 'colour the output even when it is not a terminal'],
+      ['  -h, --help', 'print this help'],
+    ]),
+    '',
+    'Examples:',
+    '  regexplain explain "^(\\d{4})-(\\d{2})$"',
+    '  regexplain match "(\\w+)@(\\w+)" "mail bob@example"',
+    '  regexplain trace "a+b" "aab"',
+    '  regexplain cost "(a+)+b"',
+    '',
+    'This engine has no backreferences and no lookaround, on purpose: both',
+    'need backtracking, and backtracking is what makes a regex able to hang.',
+  ].join('\n');
+}
+
+/** Splits argv into a command, positional arguments and options. */
+export function parseArgs(argv) {
+  const options = { flags: '', json: false, colour: null };
+  const positional = [];
+  const rest = [...argv];
+
+  while (rest.length > 0) {
+    const argument = rest.shift();
+
+    switch (argument) {
+      case '-f':
+      case '--flags':
+        options.flags = rest.shift() ?? '';
+        break;
+      case '-j':
+      case '--json':
+        options.json = true;
+        break;
+      case '--color':
+        options.colour = true;
+        break;
+      case '--no-color':
+        options.colour = false;
+        break;
+      case '-h':
+      case '--help':
+        positional.unshift('help');
+        break;
+      case '-V':
+      case '--version':
+        positional.unshift('version');
+        break;
+      default:
+        if (argument.startsWith('--flags=')) options.flags = argument.slice('--flags='.length);
+        else if (argument.startsWith('-') && argument.length > 1 && !positional.length) {
+          options.unknown = argument;
+        } else positional.push(argument);
+    }
+  }
+
+  return { command: positional[0] ?? 'help', positional: positional.slice(1), options };
+}
