@@ -221,4 +221,46 @@ test('an unclosed group is refused, naming where it opened', () => {
 test('an unopened group is refused', () => {
   assert.match(refusal('a)').message, /unexpected/);
 });
-)})
+
+test('an unknown group prefix is refused', () => {
+  assert.match(refusal('(?#comment)').message, /unknown group prefix/);
+});
+
+// ---- classes ----
+
+test('a class holds the characters named in it', () => {
+  const tree = parse('[abc]');
+  assert.equal(tree.type, NodeType.CLASS);
+  assert.equal(tree.negated, false);
+  assert.deepEqual(tree.ranges, [[97, 99]]);
+});
+
+test('a class range is inclusive', () => {
+  assert.deepEqual(parse('[a-c]').ranges, [[97, 99]]);
+});
+
+test('a leading caret negates a class', () => {
+  assert.equal(parse('[^a]').negated, true);
+});
+
+test('a caret elsewhere in a class is a literal caret', () => {
+  const tree = parse('[a^]');
+  assert.equal(tree.negated, false);
+  assert.ok(tree.ranges.some(([lo]) => lo === '^'.codePointAt(0)));
+});
+
+test('a dash at either end of a class is a literal dash', () => {
+  assert.ok(parse('[-a]').ranges.some(([lo]) => lo === 45));
+  assert.ok(parse('[a-]').ranges.some(([lo]) => lo === 45));
+});
+
+test('a closing bracket first in a class is a literal bracket', () => {
+  assert.ok(parse('[]a]').ranges.some(([lo]) => lo === 93));
+});
+
+test('a named class inside a class joins the set', () => {
+  const tree = parse('[\\d-]');
+  assert.ok(tree.ranges.some(([lo, hi]) => lo === 48 && hi === 57));
+  assert.ok(tree.ranges.some(([lo]) => lo === 45));
+});
+})
