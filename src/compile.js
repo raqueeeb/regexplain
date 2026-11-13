@@ -17,3 +17,6 @@ import { Op, Program } from './program.js';
 import { PatternError, fail } from './syntax-error.js';
 import { normalize, range } from './ranges.js';
 import { Parser, parse } from './parser.js';
+
+/** The largest program we will build, so a count cannot exhaust memory. */
+export const MAX_PROGRAM = 20000;
