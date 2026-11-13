@@ -172,3 +172,43 @@ test('both anchors together mean the whole text', () => {
   assert.equal(found('^abc$', 'abc'), 'abc');
   assert.equal(found('^abc$', 'abcd'), null);
 });
+
+test('without the m flag an anchor ignores newlines', () => {
+  assert.equal(found('^b', 'a\nb'), null);
+  assert.equal(found('a$', 'a\nb'), null);
+});
+
+test('with the m flag an anchor matches at every line', () => {
+  assert.equal(found('^b', 'a\nb', 'm'), 'b');
+  assert.equal(found('a$', 'a\nb', 'm'), 'a');
+});
+
+test('a word boundary sits between a word character and anything else', () => {
+  assert.equal(found('\\bcat\\b', 'a cat here'), 'cat');
+  assert.equal(found('\\bcat\\b', 'concatenate'), null);
+});
+
+test('a word boundary matches at the ends of the text', () => {
+  assert.equal(found('\\bcat', 'cat'), 'cat');
+  assert.equal(found('cat\\b', 'cat'), 'cat');
+});
+
+test('a negated word boundary is the positions a boundary is not', () => {
+  assert.equal(found('\\Bcat', 'concat'), 'cat');
+  assert.equal(found('\\Bcat', 'a cat'), null);
+});
+
+// ---- flags ----
+
+test('the i flag matches either case', () => {
+  assert.equal(found('abc', 'xABCx', 'i'), 'ABC');
+  assert.equal(found('abc', 'xABCx'), null);
+});
+
+test('the i flag applies inside a class', () => {
+  assert.equal(found('[a-c]+', 'ABC', 'i'), 'ABC');
+});
+
+test('the i flag applies to a negated class', () => {
+  assert.equal(found('[^a-c]+', 'ABCxy', 'i'), 'xy');
+});
