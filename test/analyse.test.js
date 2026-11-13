@@ -94,3 +94,41 @@ test('several unnamed groups suggests naming them', () => {
   const notes = findings(parse('(a)(b)(c)'));
   assert.ok(notes.some((each) => /unnamed capturing groups/.test(each.what)));
 });
+
+test('named groups are not complained about', () => {
+  const notes = complaints('(?<a>x)(?<b>y)(?<c>z)');
+  assert.deepEqual(notes, []);
+});
+
+test('non-capturing groups are not complained about', () => {
+  assert.deepEqual(complaints('(?:a)(?:b)(?:c)'), []);
+});
+
+test('an ordinary pattern has nothing said about it', () => {
+  assert.deepEqual(complaints('^\\d{4}-\\d{2}$'), []);
+  assert.deepEqual(complaints('[a-z]+@[a-z]+'), []);
+});
+
+// ---- the first set ----
+
+test('a literal can begin with one character', () => {
+  assert.equal(firstSetSize(parse('abc')), 1);
+});
+
+test('a class can begin with as many characters as it holds', () => {
+  assert.equal(firstSetSize(parse('[a-z]x')), 26);
+});
+
+test('a dot can begin with anything, which is not a number', () => {
+  assert.equal(firstSetSize(parse('.')), null);
+});
+
+test('an alternation adds up what its options can begin with', () => {
+  assert.equal(firstSetSize(parse('a|b|c')), 3);
+});
+
+test('a negated class can begin with almost anything', () => {
+  assert.equal(firstSetSize(parse('[^a]')), null);
+});
+
+// ---- counting ----
