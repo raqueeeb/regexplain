@@ -23,3 +23,55 @@ export const Severity = {
   WARNING: 'warning',
   NOTE: 'note',
 };
+
+/** The characters a node can begin with, as a set size, or `null` for any. */
+export function firstSetSize(node) {
+  switch (node.type) {
+    case NodeType.LITERAL:
+      return 1;
+    case NodeType.CLASS:
+      return node.negated ? null : size(node.ranges);
+    case NodeType.ANY:
+      return null;
+    case NodeType.GROUP:
+      return firstSetSize(node.node);
+    case NodeType.REPEAT:
+      return firstSetSize(node.node);
+    case NodeType.CONCAT:
+      return node.parts.length > 0 ? firstSetSize(node.parts[0]) : 0;
+    case NodeType.ALTERNATE: {
+      const sizes = node.options.map((option) => firstSetSize(option));
+      if (sizes.some((each) => each === null)) return null;
+      return sizes.reduce((total, each) => total + each, 0);
+    }
+    default:
+      return 0;
+  }
+}
+
+/**
+ * Quantifiers that contain a quantifier.
+ *
+ * `(a+)+` is the classic: for a run of a's there are exponentially many ways
+ * to divide it between the inner and outer repetition, and a backtracking
+ * engine tries all of them before concluding that the pattern does not
+ * match. This engine tries each *position* once instead, so it is immune —
+ * but the pattern is still a trap in every other engine.
+ */
+export function nestedQuantifiers(tree) {
+  const found = [];
+
+  walk(tree, (node) => {
+    if (node.type !== NodeType.REPEAT) return;
+    if (node.max !== null && node.max <= 1) return;
+
+    walk(node.node, (inner, depth) => {
+      if (depth === 0) return;
+      if (inner.type !== NodeType.REPEAT) return;
+      if (inner.max !== null && inner.max <= 1) return;
+      found.push({ outer: node, inner });
+    });
+  });
+
+  return found;
+}
