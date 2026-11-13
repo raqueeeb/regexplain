@@ -317,3 +317,21 @@ export function allCommand(pattern, text, options, out) {
   out(`${results.length} match${results.length === 1 ? '' : 'es'}`);
   return 0;
 }
+
+/** `trace` */
+export function traceCommand(pattern, text, options, out) {
+  const program = compile(pattern, options.flags);
+  const result = search(program, text, { trace: true });
+
+  if (options.json) {
+    out(JSON.stringify({ pattern, input: text, matched: result.matched, trace: result.trace }, null, 2));
+    return result.matched ? 0 : 1;
+  }
+
+  out(heading(`/${pattern}/${program.flags} against ${JSON.stringify(text)}`, options.colour));
+  out('');
+  out(renderTrace(result, text, options.colour));
+  out('');
+  out(renderMatch(result, text, options.colour));
+  return result.matched ? 0 : 1;
+}
