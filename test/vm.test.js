@@ -212,3 +212,42 @@ test('the i flag applies inside a class', () => {
 test('the i flag applies to a negated class', () => {
   assert.equal(found('[^a-c]+', 'ABCxy', 'i'), 'xy');
 });
+
+test('flags can be combined', () => {
+  assert.equal(found('^a.b$', 'A\nB', 'is'), 'A\nB');
+});
+
+// ---- captures ----
+
+test('a group captures what it matched', () => {
+  assert.deepEqual(captures('(a)(b)', 'ab'), ['a', 'b']);
+});
+
+test('captures report their positions', () => {
+  const result = search(compile('x(\\d+)y'), 'ax123yb');
+  assert.deepEqual(
+    result.groups.map((group) => [group.start, group.end]),
+    [[2, 5]],
+  );
+});
+
+test('a group that did not take part captures nothing', () => {
+  assert.deepEqual(captures('(a)|(b)', 'b'), [null, 'b']);
+});
+
+test('a group inside a repetition keeps its last turn', () => {
+  assert.deepEqual(captures('(?:(a)|(b))+', 'ab'), ['a', 'b']);
+});
+
+test('a nested group captures independently', () => {
+  assert.deepEqual(captures('((a)b)', 'ab'), ['ab', 'a']);
+});
+
+test('a named group keeps its name in the result', () => {
+  const result = search(compile('(?<word>[a-z]+)'), 'hi');
+  assert.equal(result.groups[0].name, 'word');
+});
+
+test('a non-capturing group captures nothing at all', () => {
+  assert.deepEqual(captures('(?:ab)', 'ab'), []);
+});
