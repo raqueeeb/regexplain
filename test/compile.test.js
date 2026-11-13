@@ -51,3 +51,48 @@ test('a class compiles to one class instruction', () => {
   assert.deepEqual(instruction.ranges, [[97, 122]]);
   assert.equal(instruction.negated, false);
 });
+
+test('a dot compiles to any, carrying the s flag', () => {
+  assert.equal(compile('.').instructions[1].dotAll, false);
+  assert.equal(compile('.', 's').instructions[1].dotAll, true);
+});
+
+test('an anchor compiles to an assertion, carrying the m flag', () => {
+  const instruction = compile('^', 'm').instructions[1];
+  assert.equal(instruction.op, Op.ASSERT);
+  assert.equal(instruction.multiline, true);
+});
+
+test('an alternation compiles to a split and a jump', () => {
+  const ops = opsOf('a|b');
+  assert.ok(ops.includes(Op.SPLIT));
+  assert.ok(ops.includes(Op.JMP));
+});
+
+test('an alternation of three uses two splits', () => {
+  const splits = compile('a|b|c').instructions.filter((each) => each.op === Op.SPLIT);
+  assert.equal(splits.length, 2);
+});
+
+test('a capturing group compiles to a pair of saves', () => {
+  const saves = compile('(a)').instructions.filter((each) => each.op === Op.SAVE);
+  assert.deepEqual(saves.map((each) => each.slot), [0, 2, 3, 1]);
+});
+
+test('a non-capturing group compiles to no saves of its own', () => {
+  const saves = compile('(?:a)').instructions.filter((each) => each.op === Op.SAVE);
+  assert.equal(saves.length, 2);
+});
+
+test('a counted repetition repeats the instructions', () => {
+  const chars = compile('a{3}').instructions.filter((each) => each.op === Op.CHAR);
+  assert.equal(chars.length, 3);
+});
+
+test('a counted range emits the required copies then optional ones', () => {
+  const program = compile('a{2,4}');
+  const chars = program.instructions.filter((each) => each.op === Op.CHAR);
+  const splits = program.instructions.filter((each) => each.op === Op.SPLIT);
+  assert.equal(chars.length, 4);
+  assert.equal(splits.length, 2);
+});
