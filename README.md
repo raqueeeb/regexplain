@@ -120,3 +120,38 @@ backtracking, which is what this engine exists to avoid
 
 If you need those, you need a different kind of engine — and you should know
 that you are paying for them.
+
+## What it will do
+
+Literals, `.`, `|`, groups `(...)`, non-capturing `(?:...)`, named
+`(?<name>...)`, classes `[a-z^-]` with ranges and negation, the named classes
+`\d \w \s \D \W \S`, anchors `^ $ \b \B`, the quantifiers `* + ? {n} {n,}
+{n,m}` each in a greedy and a lazy form, the escapes `\n \t \r \f \v \0 \xNN
+\uNNNN \u{NNNNN}`, and the flags `i`, `s` and `m`.
+
+Matching is **leftmost-first**, like PCRE and unlike POSIX: `a|ab` against
+`ab` matches `a`, because the alternation prefers the option written first.
+`regexplain explain` says so in as many words.
+
+Positions are counted in **code points**, not UTF-16 units, so an astral
+character is one character and not two.
+
+## As a library
+
+```js
+import { compile, search, parse, sentence, analyse } from 'regexplain';
+
+const program = compile('(?<user>\\w+)@(?<host>\\w+)', 'i');
+const result = search(program, 'write to Bob@Example now');
+
+result.text;                  // 'Bob@Example'
+result.groups[0].name;         // 'user'
+result.groups[0].text;         // 'Bob'
+result.steps;                  // how much work it took
+
+sentence(parse('a+b'));        // "'a', one or more times, ... then 'b'"
+analyse(parse('(a+)+'), program).findings;   // the warnings
+```
+
+`search` takes `{ trace: true }` to record the thread list per position, and
+`searchAll` returns every non-overlapping match.
