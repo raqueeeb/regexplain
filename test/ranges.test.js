@@ -130,3 +130,38 @@ test('a complement of a complement is the original set', () => {
 test('the complement of nothing is everything', () => {
   assert.deepEqual(invert([]), [[0, MAX_CODE_POINT]]);
 });
+
+test('size counts code points, not ranges', () => {
+  assert.equal(size([range('a', 'z')]), 26);
+  assert.equal(size([range('a'), range('c')]), 2);
+  assert.equal(size([]), 0);
+});
+
+// ---- describing ----
+
+test('a single character describes as itself', () => {
+  assert.equal(describe([range('a')]), 'a');
+});
+
+test('a range describes with a dash', () => {
+  assert.equal(describe([range('a', 'z')]), 'a-z');
+});
+
+test('a range of two describes as both, because a-b reads oddly', () => {
+  assert.equal(describe([range('a', 'b')]), 'a, b');
+});
+
+test('several ranges describe in order', () => {
+  assert.equal(describe(normalize([range('0', '9'), range('a', 'f')])), '0-9, a-f');
+});
+
+test('the empty set describes as nothing', () => {
+  assert.equal(describe([]), 'nothing');
+});
+
+test('the invisible characters are named', () => {
+  assert.equal(describeCode(10), '\\n');
+  assert.equal(describeCode(9), '\\t');
+  assert.equal(describeCode(32), 'space');
+  assert.equal(describeCode(0), '\\0');
+});
