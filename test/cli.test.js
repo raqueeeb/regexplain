@@ -255,3 +255,45 @@ test('compile counts the capturing groups in the singular and the plural', () =>
   assert.match(invoke('compile', '(a)').out, /1 capturing group\b/);
   assert.match(invoke('compile', '(a)(b)').out, /2 capturing groups/);
 });
+
+test('compile as json carries the instructions', () => {
+  const data = JSON.parse(invoke('compile', 'a', '--json').out);
+  assert.equal(data.instructions[0].op, 'save');
+});
+
+// ---- cost ----
+
+test('cost reports the size of a pattern', () => {
+  const result = invoke('cost', '^[a-z]+$');
+  assert.equal(result.code, 0);
+  assert.match(result.out, /instructions/);
+  assert.match(result.out, /nothing to warn about/);
+});
+
+test('cost exits one when there is a warning, so a script can fail on it', () => {
+  const result = invoke('cost', '(a+)+b');
+  assert.equal(result.code, 1);
+  assert.match(result.out, /warning/);
+});
+
+test('cost does not fail on a note alone', () => {
+  const result = invoke('cost', '(a)(b)(c)');
+  assert.equal(result.code, 0);
+  assert.match(result.out, /note/);
+});
+
+test('cost as json carries the findings', () => {
+  const data = JSON.parse(invoke('cost', '(a+)+', '--json').out);
+  assert.ok(data.findings.length > 0);
+  assert.equal(data.findings[0].severity, 'warning');
+});
+
+// ---- bad patterns ----
+
+test('a bad pattern is reported with a caret and exits one', () => {
+  const result = invoke('explain', 'a[b');
+  assert.equal(result.code, 1);
+  assert.match(result.err, /never closed/);
+  assert.match(result.err, /\^/);
+});
+)
