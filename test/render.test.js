@@ -106,4 +106,40 @@ test('a table can align a column to the right', () => {
   const text = table([['1', 'a'], ['100', 'b']], { align: ['right'] });
   assert.ok(text.split('\n')[0].startsWith('  1'));
 });
+
+test('an empty table is empty', () => {
+  assert.equal(table([]), '');
+});
+
+test('a table with one column still works', () => {
+  assert.equal(table([['a'], ['b']]), 'a\nb');
+});
+
+// ---- the tree ----
+
+test('a tree has one line per node', () => {
+  assert.equal(treeLines(parse('(ab)+')).length, 5);
+});
+
+test('the last child of a node gets a corner and the others a tee', () => {
+  const lines = treeLines(parse('abc'));
+  assert.ok(lines[1].includes('├─'));
+  assert.ok(lines[3].includes('└─'));
+});
+
+test('a branch that continues carries a bar through its children', () => {
+  const lines = treeLines(parse('(a)b'));
+  assert.ok(lines.some((line) => line.startsWith('│')));
+});
+
+test('the last branch carries no bar through its children', () => {
+  const lines = treeLines(parse('a(b)'));
+  assert.ok(lines[lines.length - 1].startsWith('   '));
+});
+
+test('the root has no connector of its own', () => {
+  assert.ok(!treeLines(parse('ab'))[0].includes('─'));
+});
+
+// ---- headings and carets ----
 ))
