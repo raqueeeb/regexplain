@@ -88,3 +88,53 @@ test('a word boundary and its negation are anchors', () => {
   assert.equal(parse('\\b').kind, Anchor.WORD_BOUNDARY);
   assert.equal(parse('\\B').kind, Anchor.NOT_WORD_BOUNDARY);
 });
+
+test('an anchor cannot be repeated, because it matches no characters', () => {
+  assert.match(refusal('^*').message, /anchor matches a position/);
+  assert.match(refusal('\\b+').message, /anchor matches a position/);
+});
+
+// ---- quantifiers ----
+
+test('a star is zero or more', () => {
+  const tree = parse('a*');
+  assert.equal(tree.type, NodeType.REPEAT);
+  assert.equal(tree.min, 0);
+  assert.equal(tree.max, null);
+});
+
+test('a plus is one or more', () => {
+  assert.equal(parse('a+').min, 1);
+  assert.equal(parse('a+').max, null);
+});
+
+test('a question mark is optional', () => {
+  assert.equal(parse('a?').min, 0);
+  assert.equal(parse('a?').max, 1);
+});
+
+test('a quantifier is greedy unless a question mark follows it', () => {
+  assert.equal(parse('a+').lazy, false);
+  assert.equal(parse('a+?').lazy, true);
+  assert.equal(parse('a*?').lazy, true);
+  assert.equal(parse('a??').lazy, true);
+});
+
+test('a quantifier applies to the atom before it, not the whole pattern', () => {
+  const tree = parse('ab+');
+  assert.equal(tree.type, NodeType.CONCAT);
+  assert.equal(tree.parts[1].type, NodeType.REPEAT);
+  assert.equal(tree.parts[1].node.char, 'b');
+});
+
+test('a quantifier after a group applies to the group', () => {
+  const tree = parse('(ab)+');
+  assert.equal(tree.type, NodeType.REPEAT);
+  assert.equal(tree.node.type, NodeType.GROUP);
+});
+
+test('a count with one number is exact', () => {
+  const tree = parse('a{3}');
+  assert.equal(tree.min, 3);
+  assert.equal(tree.max, 3);
+});
