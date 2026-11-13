@@ -265,3 +265,20 @@ export function search(program, input, options = {}) {
 export function test(program, input) {
   return search(program, input).matched;
 }
+
+/** Every non-overlapping match, left to right. */
+export function searchAll(program, input, limit = 1000) {
+  const characters = Array.from(String(input));
+  const found = [];
+  let at = 0;
+
+  while (at <= characters.length && found.length < limit) {
+    const result = search(program, input, { start: at });
+    if (!result.matched) break;
+    found.push(result);
+    // An empty match would otherwise find itself for ever.
+    at = result.end > result.index ? result.end : result.end + 1;
+  }
+
+  return found;
+}
