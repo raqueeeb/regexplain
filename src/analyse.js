@@ -75,3 +75,69 @@ export function nestedQuantifiers(tree) {
 
   return found;
 }
+
+/** Repetitions whose body can match the empty string. */
+export function nullableRepeats(tree) {
+  const found = [];
+
+  walk(tree, (node) => {
+    if (node.type !== NodeType.REPEAT) return;
+    if (node.max !== null && node.max <= 1) return;
+    if (isNullable(node.node)) found.push(node);
+  });
+
+  return found;
+}
+
+/** Everything worth saying about a pattern. */
+export function findings(tree) {
+  const out = [];
+
+  for (const { outer, inner } of nestedQuantifiers(tree)) {
+    out.push({
+      severity: Severity.WARNING,
+      what: 'a quantifier inside a quantifier',
+      why:
+        'a backtracking engine can take time exponential in the length of '
+        + 'the input on this shape. This engine cannot, but the pattern is '
+        + 'still a trap anywhere else.',
+      detail: `${describeQuantifier(inner)} inside ${describeQuantifier(outer)}`,
+    });
+  }
+
+  for (const node of nullableRepeats(tree)) {
+    out.push({
+      severity: Severity.WARNING,
+      what: 'a repetition of something that can match nothing',
+      why:
+        'each turn of the loop may consume no input, so the repetition adds '
+        + 'nothing but possibilities. It is almost always a mistake in the '
+        + 'pattern rather than an intention.',
+      detail: describeQuantifier(node),
+    });
+  }
+
+  const groups = groupsOf(tree);
+  if (groups.length > 9) {
+    out.push({
+      severity: Severity.NOTE,
+      what: `${groups.length} capturing groups`,
+      why: 'a pattern with this many captures is usually easier to read split in two.',
+      detail: null,
+    });
+  }
+
+  const unusedCaptures = groups.filter((each) => each.name === null);
+  if (unusedCaptures.length >= 3) {
+    out.push({
+      severity: Severity.NOTE,
+      what: 'several unnamed capturing groups',
+      why:
+        'reading results by number breaks whenever a group is added. '
+        + '`(?<name>...)` names them, and `(?:...)` groups without capturing.',
+      detail: `groups ${unusedCaptures.map((each) => each.index).join(', ')}`,
+    });
+  }
+
+  return out;
+}
