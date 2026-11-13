@@ -1,0 +1,42 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # 20 is the oldest release the engine claims to support, and 24 is
+        # the current one. Testing the ends catches a feature used without
+        # noticing more cheaply than testing every release between them.
+        node: ['20', '22', '24']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      # There are no dependencies to install, which is the point: the engine
+      # has none, and nor does its test runner.
+      - name: Check house style
+        run: node tools/lint.js
+
+      - name: Run the tests
+        run: node --test test/*.test.js
+
+      - name: Check the command line runs
+        run: |
+          node bin/regexplain.js version
+          node bin/regexplain.js explain '^(\d{4})-(\d{2})$'
+          node bin/regexplain.js match '(\w+)@(\w+)' 'to bob@host'
+          node bin/regexplain.js trace 'a+b' 'aab'
+          node bin/regexplain.js compile 'a|b'
+          node bin/regexplain.js cost '^[a-z]+$'
