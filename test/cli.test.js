@@ -172,3 +172,41 @@ test('match reports no match and exits one', () => {
   assert.equal(result.code, 1);
   assert.match(result.out, /no match/);
 });
+
+test('match shows the captures', () => {
+  const result = invoke('match', '(\\w+)@(\\w+)', 'to bob@host now');
+  assert.match(result.out, /"bob"/);
+  assert.match(result.out, /"host"/);
+});
+
+test('match honours the flags', () => {
+  assert.equal(invoke('match', 'abc', 'ABC').code, 1);
+  assert.equal(invoke('match', 'abc', 'ABC', '-f', 'i').code, 0);
+});
+
+test('match as json carries the span and the groups', () => {
+  const result = invoke('match', '(a)(b)', 'xaby', '--json');
+  const data = JSON.parse(result.out);
+  assert.equal(data.matched, true);
+  assert.equal(data.index, 1);
+  assert.equal(data.groups.length, 2);
+});
+
+test('match as json still exits one when nothing matched', () => {
+  const result = invoke('match', 'z', 'abc', '--json');
+  assert.equal(result.code, 1);
+  assert.equal(JSON.parse(result.out).matched, false);
+});
+
+// ---- all ----
+
+test('all lists every match', () => {
+  const result = invoke('all', '\\d+', 'a1 b22 c333');
+  assert.equal(result.code, 0);
+  assert.match(result.out, /3 matches/);
+  assert.match(result.out, /"333"/);
+});
+
+test('all says one match in the singular', () => {
+  assert.match(invoke('all', '\\d+', 'a1').out, /1 match\b/);
+});
