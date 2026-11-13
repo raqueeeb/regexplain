@@ -84,3 +84,57 @@ export function checkLine(file, index, line, found) {
     found.push(problem(file, at, message));
   }
 }
+
+/** Checks a file's contents, which is everything but reading it. */
+export function checkText(file, text) {
+  const found = [];
+  const lines = text.split('\n');
+
+  if (text.includes('\r')) {
+    found.push(problem(file, 1, 'carriage return; this repository stores LF'));
+  }
+  if (!text.endsWith('\n')) {
+    found.push(problem(file, lines.length, 'no newline at end of file'));
+  }
+  if (text.endsWith('\n\n')) {
+    found.push(problem(file, lines.length, 'blank line at end of file'));
+  }
+  if (!/^(#!.*\n)?\/\*\*/.test(text)) {
+    found.push(problem(file, 1, 'file does not open with a doc comment'));
+  }
+
+  lines.forEach((line, index) => {
+    // A split on a trailing newline ends in an empty string that is not a
+    // line of the file.
+    if (index === lines.length - 1 && line === '') return;
+    checkLine(file, index, line, found);
+  });
+
+  return found;
+}
+
+/** Checks one file on disk. */
+export function checkFile(file, found = []) {
+  found.push(...checkText(file, fs.readFileSync(file, 'utf8')));
+  return found;
+}
+
+/** Runs the check and reports. */
+export function main(targets) {
+  const files = targets.flatMap((target) => filesUnder(target)).sort();
+  const found = [];
+  for (const file of files) checkFile(file, found);
+
+  for (const { file, line, message } of found) {
+    process.stdout.write(`${file}:${line}: ${message}\n`);
+  }
+  process.stdout.write(`${files.length} files, ${found.length} problems\n`);
+
+  return found.length === 0 ? 0 : 1;
+}
+
+// Run only when this file is what was asked for, so the tests can import it.
+if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
+  const targets = process.argv.slice(2);
+  process.exitCode = main(targets.length > 0 ? targets : ['src', 'test', 'tools', 'bin']);
+}
