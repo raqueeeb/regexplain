@@ -32,3 +32,36 @@ export const Anchor = {
 export function empty() {
   return { type: NodeType.EMPTY };
 }
+
+/** One character, as written. */
+export function literal(char) {
+  return { type: NodeType.LITERAL, char };
+}
+
+/**
+ * A set of characters.
+ *
+ * Ranges are inclusive pairs of code points, kept sorted and merged by the
+ * parser so that membership is a binary search and so that two spellings of
+ * the same class compare equal.
+ */
+export function charClass(ranges, negated = false, source = null) {
+  return { type: NodeType.CLASS, ranges, negated, source };
+}
+
+/** The dot: any character, newline included only under the `s` flag. */
+export function any() {
+  return { type: NodeType.ANY };
+}
+
+/** A position rather than a character. */
+export function anchor(kind) {
+  return { type: NodeType.ANCHOR, kind };
+}
+
+/** One thing after another. */
+export function concat(parts) {
+  if (parts.length === 0) return empty();
+  if (parts.length === 1) return parts[0];
+  return { type: NodeType.CONCAT, parts };
+}
