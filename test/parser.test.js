@@ -305,4 +305,44 @@ test('a unicode escape names a character', () => {
   assert.equal(parse('\\u0041').char, 'A');
   assert.equal(parse('\\u{1F600}').char, '\u{1F600}');
 });
-)})
+
+test('a hex escape with too few digits is refused', () => {
+  assert.match(refusal('\\x4').message, /hexadecimal/);
+  assert.match(refusal('\\u00').message, /hexadecimal/);
+});
+
+test('a named class escape is a class', () => {
+  assert.equal(typeOf('\\d'), NodeType.CLASS);
+  assert.equal(parse('\\d').source, '\\d');
+  assert.equal(parse('\\D').negated, true);
+});
+
+test('a letter that is not an escape is refused rather than ignored', () => {
+  assert.match(refusal('\\q').message, /not an escape/);
+});
+
+test('a pattern ending in a backslash is refused', () => {
+  assert.match(refusal('a\\').message, /ends in a backslash/);
+});
+
+// ---- the deliberate refusals ----
+
+test('a backreference is refused, with the reason', () => {
+  const error = refusal('(a)\\1');
+  assert.match(error.message, /backreference is not supported/);
+  assert.match(error.message, /backtracking/);
+});
+
+test('lookahead and lookbehind are refused, with the reason', () => {
+  assert.match(refusal('(?=a)').message, /lookaround is not supported/);
+  assert.match(refusal('(?!a)').message, /lookaround is not supported/);
+});
+
+// ---- errors carry a position ----
+
+test('an error knows where in the pattern it is', () => {
+  const error = refusal('ab[c');
+  assert.equal(error.offset, 2);
+  assert.equal(error.pattern, 'ab[c');
+});
+}))})
