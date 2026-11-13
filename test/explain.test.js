@@ -107,3 +107,31 @@ test('a capturing group says its number', () => {
 test('a named group says its name', () => {
   assert.match(said('(?<year>a)'), /captured as 'year'/);
 });
+
+test('a non-capturing group is not mentioned as a capture', () => {
+  assert.doesNotMatch(said('(?:a)'), /captured/);
+});
+
+// ---- joining ----
+
+test('two things in a row are joined with then', () => {
+  assert.equal(said('ab'), "'a' then 'b'");
+});
+
+test('three things in a row use commas and a then', () => {
+  assert.equal(said('abc'), "'a', 'b', then 'c'");
+});
+
+test('an alternation reads as either or', () => {
+  assert.equal(said('a|b'), "either 'a' or 'b'");
+});
+
+test('an alternation of three uses commas and an or', () => {
+  assert.match(said('a|b|c'), /either 'a', 'b', or 'c'/);
+});
+
+test('an alternation says that the order matters', () => {
+  assert.match(summarise(parse('a|b')), /trying them in order/);
+});
+
+// ---- the outline ----
