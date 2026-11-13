@@ -246,3 +246,74 @@ export function explainCommand(pattern, options, out) {
 
   return 0;
 }
+
+/** `match` */
+export function matchCommand(pattern, text, options, out) {
+  const program = compile(pattern, options.flags);
+  const result = search(program, text);
+
+  if (options.json) {
+    out(
+      JSON.stringify(
+        {
+          pattern,
+          flags: program.flags,
+          input: text,
+          matched: result.matched,
+          index: result.index,
+          end: result.end,
+          text: result.text,
+          groups: result.groups,
+          steps: result.steps,
+        },
+        null,
+        2,
+      ),
+    );
+    return result.matched ? 0 : 1;
+  }
+
+  out(renderMatch(result, text, options.colour));
+  return result.matched ? 0 : 1;
+}
+
+/** `all` */
+export function allCommand(pattern, text, options, out) {
+  const program = compile(pattern, options.flags);
+  const results = searchAll(program, text);
+
+  if (options.json) {
+    out(
+      JSON.stringify(
+        {
+          pattern,
+          input: text,
+          count: results.length,
+          matches: results.map((result) => ({
+            index: result.index,
+            end: result.end,
+            text: result.text,
+            groups: result.groups,
+          })),
+        },
+        null,
+        2,
+      ),
+    );
+    return results.length > 0 ? 0 : 1;
+  }
+
+  if (results.length === 0) {
+    out(palette(options.colour).red('no match'));
+    return 1;
+  }
+
+  const rows = [['#', 'span', 'text']];
+  results.forEach((result, index) => {
+    rows.push([String(index + 1), `${result.index}–${result.end}`, JSON.stringify(result.text)]);
+  });
+  out(table(rows, { align: ['right'] }));
+  out('');
+  out(`${results.length} match${results.length === 1 ? '' : 'es'}`);
+  return 0;
+}
