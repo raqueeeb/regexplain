@@ -193,3 +193,56 @@ function dispatch(command, pattern, text, options, out) {
       return 2;
   }
 }
+
+/** `explain` */
+export function explainCommand(pattern, options, out) {
+  const tree = parse(pattern);
+  const flags = normalizeFlags(options.flags, pattern);
+
+  if (options.json) {
+    out(
+      JSON.stringify(
+        {
+          pattern,
+          flags: flags.text,
+          sentence: sentence(tree),
+          groups: groupsOf(tree).map((group) => ({ index: group.index, name: group.name })),
+          tree,
+        },
+        null,
+        2,
+      ),
+    );
+    return 0;
+  }
+
+  out(heading(`/${pattern}/${flags.text}`, options.colour));
+  out('');
+  out(renderSentence(tree));
+  out('');
+  out(heading('Structure', options.colour));
+  out(renderTree(tree));
+
+  const groups = groupsOf(tree);
+  if (groups.length > 0) {
+    out('');
+    out(heading('Captures', options.colour));
+    out(
+      table(
+        groups.map((group) => [
+          String(group.index),
+          group.name ?? palette(options.colour).dim('unnamed'),
+        ]),
+      ),
+    );
+  }
+
+  const meanings = explainFlags(flags.text);
+  if (meanings.length > 0) {
+    out('');
+    out(heading('Flags', options.colour));
+    out(table(meanings.map((each) => [each.flag, each.means])));
+  }
+
+  return 0;
+}
