@@ -34,3 +34,8 @@ const ESCAPES = {
   a: '\x07',
   e: '\x1b',
 };
+
+/** Parses a pattern, or throws a `PatternError`. */
+export function parse(pattern) {
+  return new Parser(String(pattern)).parse();
+}
