@@ -42,3 +42,37 @@ test('a newline is named', () => {
 test('the dot says what it excludes', () => {
   assert.match(said('.'), /any character except a newline/);
 });
+
+test('the anchors are explained as positions', () => {
+  assert.match(said('^'), /start of the text/);
+  assert.match(said('$'), /end of the text/);
+  assert.match(said('\\b'), /word boundary/);
+  assert.match(said('\\B'), /not a word boundary/);
+});
+
+// ---- classes ----
+
+test('a named class is explained by name, not by its ranges', () => {
+  assert.equal(describeClass(parse('\\d')), 'a digit');
+  assert.match(describeClass(parse('\\w')), /letter, a digit or an underscore/);
+  assert.equal(describeClass(parse('\\s')), 'a whitespace character');
+});
+
+test('a negated named class keeps its article', () => {
+  assert.equal(describeClass(parse('\\D')), 'any character that is not a digit');
+});
+
+test('a written-out class lists its members', () => {
+  assert.equal(describeClass(parse('[abc]')), 'one of: a-c');
+});
+
+test('a negated class says what it excludes', () => {
+  assert.match(describeClass(parse('[^abc]')), /^any character except/);
+});
+
+// ---- quantifiers ----
+
+test('a greedy quantifier says it prefers as many as possible', () => {
+  assert.match(describeRepeat(parse('a*')), /zero or more times, preferring as many/);
+  assert.match(describeRepeat(parse('a+')), /one or more times, preferring as many/);
+});
