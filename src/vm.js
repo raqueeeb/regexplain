@@ -20,3 +20,23 @@
 import { Anchor } from './ast.js';
 import { Op, consumes } from './program.js';
 import { contains } from './ranges.js';
+
+/** What a word character is, for `\b`. */
+const WORD = /[A-Za-z0-9_]/;
+
+/** A list of threads that cannot hold the same program counter twice. */
+class ThreadList {
+  constructor(size) {
+    this.threads = [];
+    this.seen = new Uint8Array(size);
+  }
+
+  get length() {
+    return this.threads.length;
+  }
+
+  /** The program counters in the list, in priority order. */
+  counters() {
+    return this.threads.map((thread) => thread.pc);
+  }
+}
