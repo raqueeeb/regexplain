@@ -155,3 +155,18 @@ analyse(parse('(a+)+'), program).findings;   // the warnings
 
 `search` takes `{ trace: true }` to record the thread list per position, and
 `searchAll` returns every non-overlapping match.
+
+## Tests
+
+```sh
+node --test test/*.test.js     # 355 tests
+node tools/lint.js             # house style
+npm run check                  # both
+```
+
+No test framework and nothing to install: `node --test` is the runner and
+the linter is a hundred lines in `tools/lint.js`.
+
+## Licence
+
+MIT.
