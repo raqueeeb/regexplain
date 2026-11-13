@@ -92,3 +92,45 @@ test('the version matches the one in the package', async () => {
 });
 
 // ---- bad usage ----
+
+test('an unknown command is refused, with a hint', () => {
+  const result = invoke('frobnicate', 'a');
+  assert.equal(result.code, 2);
+  assert.match(result.err, /is not a command/);
+  assert.match(result.err, /regexplain help/);
+});
+
+test('an unknown option is refused', () => {
+  const result = invoke('-z', 'explain', 'a');
+  assert.equal(result.code, 2);
+  assert.match(result.err, /is not an option/);
+});
+
+test('a command with no pattern is refused', () => {
+  const result = invoke('explain');
+  assert.equal(result.code, 2);
+  assert.match(result.err, /needs a pattern/);
+});
+
+test('a command that needs a text says so', () => {
+  for (const command of ['match', 'trace', 'all']) {
+    const result = invoke(command, 'a');
+    assert.equal(result.code, 2, command);
+    assert.match(result.err, /needs a pattern and a text/);
+  }
+});
+
+// ---- explain ----
+
+test('explain describes a pattern in words', () => {
+  const result = invoke('explain', 'a+');
+  assert.equal(result.code, 0);
+  assert.match(result.out, /This matches/);
+  assert.match(result.out, /one or more times/);
+});
+
+test('explain shows the structure as a tree', () => {
+  const result = invoke('explain', '(ab)+');
+  assert.match(result.out, /Structure/);
+  assert.match(result.out, /└─/);
+});
