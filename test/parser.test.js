@@ -138,3 +138,51 @@ test('a count with one number is exact', () => {
   assert.equal(tree.min, 3);
   assert.equal(tree.max, 3);
 });
+
+test('a count with a trailing comma is open-ended', () => {
+  const tree = parse('a{2,}');
+  assert.equal(tree.min, 2);
+  assert.equal(tree.max, null);
+});
+
+test('a count with two numbers is a range', () => {
+  const tree = parse('a{2,4}');
+  assert.equal(tree.min, 2);
+  assert.equal(tree.max, 4);
+});
+
+test('a brace that is not a count is a literal brace', () => {
+  assert.equal(typeOf('a{'), NodeType.CONCAT);
+  assert.equal(parse('a{').parts[1].char, '{');
+  assert.equal(parse('{x}').type, NodeType.CONCAT);
+});
+
+test('a count that counts down is refused', () => {
+  assert.match(refusal('a{3,1}').message, /counts down/);
+});
+
+test('an enormous count is refused rather than compiled', () => {
+  assert.match(refusal(`a{${MAX_REPEAT + 1}}`).message, /enormous/);
+});
+
+test('a quantifier with nothing to repeat is refused', () => {
+  assert.match(refusal('*a').message, /nothing for/);
+  assert.match(refusal('+').message, /nothing for/);
+  assert.match(refusal('?').message, /nothing for/);
+});
+
+test('a quantifier on a quantifier is allowed and stacks', () => {
+  // `a*+` is odd but meaningful: it repeats the repetition.
+  const tree = parse('a*+');
+  assert.equal(tree.type, NodeType.REPEAT);
+  assert.equal(tree.node.type, NodeType.REPEAT);
+});
+
+// ---- groups ----
+
+test('a group captures and is numbered from one', () => {
+  const tree = parse('(a)(b)');
+  const groups = groupsOf(tree);
+  assert.deepEqual(groups.map((group) => group.index), [1, 2]);
+});
+)})
