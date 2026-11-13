@@ -159,3 +159,38 @@ test('no target is left unpatched', () => {
 });
 
 // ---- flags ----
+
+test('flags are checked when they are read', () => {
+  assert.equal(normalizeFlags('is').text, 'is');
+  assert.throws(() => normalizeFlags('x'), PatternError);
+  assert.throws(() => normalizeFlags('ii'), /given twice/);
+});
+
+test('flags come back sorted, so ordering never matters', () => {
+  assert.equal(normalizeFlags('si').text, normalizeFlags('is').text);
+});
+
+test('no flags is an empty set', () => {
+  const flags = normalizeFlags('');
+  assert.equal(flags.text, '');
+  assert.equal(flags.ignoreCase, false);
+});
+
+test('case folding adds the other case of a letter', () => {
+  const folded = foldCase([range('a')]);
+  assert.equal(folded.length, 2);
+});
+
+test('case folding leaves a digit alone', () => {
+  assert.deepEqual(foldCase([range('0', '9')]), [[48, 57]]);
+});
+
+test('the i flag turns a literal letter into a class', () => {
+  assert.deepEqual(opsOf('a', 'i'), [Op.SAVE, Op.CLASS, Op.SAVE, Op.MATCH]);
+});
+
+test('the i flag leaves a literal digit as a char', () => {
+  assert.deepEqual(opsOf('1', 'i'), [Op.SAVE, Op.CHAR, Op.SAVE, Op.MATCH]);
+});
+
+// ---- anchoring ----
