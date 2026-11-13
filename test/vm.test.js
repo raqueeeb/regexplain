@@ -131,3 +131,44 @@ test('an empty option can match nothing', () => {
 });
 
 // ---- classes ----
+
+test('a class matches any member', () => {
+  assert.equal(found('[abc]+', 'zzcabzz'), 'cab');
+});
+
+test('a negated class matches anything else', () => {
+  assert.equal(found('[^abc]+', 'abzzc'), 'zz');
+});
+
+test('a range in a class matches the whole range', () => {
+  assert.equal(found('[a-f]+', 'xxabcfxx'), 'abcf');
+});
+
+test('the named classes match what they name', () => {
+  assert.equal(found('\\d+', 'abc123'), '123');
+  assert.equal(found('\\w+', ' hi_there! '), 'hi_there');
+  assert.equal(found('\\s+', 'a  b'), '  ');
+});
+
+test('the negated named classes match the complement', () => {
+  assert.equal(found('\\D+', '12ab34'), 'ab');
+  assert.equal(found('\\W+', 'ab--cd'), '--');
+  assert.equal(found('\\S+', '  ab  '), 'ab');
+});
+
+// ---- anchors ----
+
+test('a caret pins a match to the start', () => {
+  assert.equal(found('^abc', 'abcdef'), 'abc');
+  assert.equal(found('^abc', 'xabc'), null);
+});
+
+test('a dollar pins a match to the end', () => {
+  assert.equal(found('abc$', 'xxabc'), 'abc');
+  assert.equal(found('abc$', 'abcx'), null);
+});
+
+test('both anchors together mean the whole text', () => {
+  assert.equal(found('^abc$', 'abc'), 'abc');
+  assert.equal(found('^abc$', 'abcd'), null);
+});
