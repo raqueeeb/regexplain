@@ -345,4 +345,51 @@ test('an error knows where in the pattern it is', () => {
   assert.equal(error.offset, 2);
   assert.equal(error.pattern, 'ab[c');
 });
-}))})
+
+test('an error renders a caret under the offending character', () => {
+  const error = refusal('ab[c');
+  assert.equal(error.caretLine(), 'ab[c\n  ^');
+});
+
+test('an error reads as a sentence with its offset', () => {
+  assert.match(String(refusal('a(')), /^PatternError: .* at offset 1$/);
+});
+
+test('an error turns into plain data for JSON output', () => {
+  const data = refusal('a(').toJSON();
+  assert.deepEqual(Object.keys(data).sort(), ['error', 'offset', 'pattern']);
+});
+
+// ---- parses ----
+
+test('parses answers without throwing', () => {
+  assert.equal(parses('a+'), true);
+  assert.equal(parses('a('), false);
+});
+
+// ---- tree measurements ----
+
+test('a tree knows its own size and depth', () => {
+  const tree = parse('(ab)+');
+  assert.ok(sizeOf(tree) >= 4);
+  assert.ok(depthOf(tree) >= 3);
+});
+
+test('nullability is computed on the tree', () => {
+  assert.equal(isNullable(parse('a*')), true);
+  assert.equal(isNullable(parse('a+')), false);
+  assert.equal(isNullable(parse('a|')), true);
+  assert.equal(isNullable(parse('(a*)(b*)')), true);
+  assert.equal(isNullable(parse('a*b')), false);
+});
+
+test('a parser reports how many groups it saw', () => {
+  const parser = new Parser('(a)(b)(?:c)');
+  parser.parse();
+  assert.equal(parser.groups, 2);
+});
+
+test('deeply nested groups are refused rather than overflowing the stack', () => {
+  const pattern = `${'('.repeat(100)}a${')'.repeat(100)}`;
+  assert.match(refusal(pattern).message, /nest deeper than/);
+});
