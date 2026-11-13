@@ -76,3 +76,34 @@ test('a greedy quantifier says it prefers as many as possible', () => {
   assert.match(describeRepeat(parse('a*')), /zero or more times, preferring as many/);
   assert.match(describeRepeat(parse('a+')), /one or more times, preferring as many/);
 });
+
+test('a lazy quantifier says it prefers as few as possible', () => {
+  assert.match(describeRepeat(parse('a*?')), /preferring as few/);
+});
+
+test('an optional part is explained as optional', () => {
+  assert.equal(describeRepeat(parse('a?')), 'optionally');
+  assert.match(describeRepeat(parse('a??')), /preferring to skip it/);
+});
+
+test('an exact count says exactly', () => {
+  assert.equal(describeRepeat(parse('a{3}')), 'exactly 3 times');
+});
+
+test('a counted range says both ends', () => {
+  assert.match(describeRepeat(parse('a{2,4}')), /between 2 and 4 times/);
+});
+
+test('an open-ended count says at least', () => {
+  assert.match(describeRepeat(parse('a{2,}')), /at least 2 times/);
+});
+
+// ---- groups ----
+
+test('a capturing group says its number', () => {
+  assert.match(said('(a)'), /captured as group 1/);
+});
+
+test('a named group says its name', () => {
+  assert.match(said('(?<year>a)'), /captured as 'year'/);
+});
