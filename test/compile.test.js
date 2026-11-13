@@ -96,3 +96,66 @@ test('a counted range emits the required copies then optional ones', () => {
   assert.equal(chars.length, 4);
   assert.equal(splits.length, 2);
 });
+
+test('an open-ended count becomes copies followed by a star', () => {
+  const program = compile('a{2,}');
+  assert.equal(program.instructions.filter((each) => each.op === Op.CHAR).length, 3);
+  assert.equal(program.instructions.filter((each) => each.op === Op.JMP).length, 1);
+});
+
+// ---- preference order ----
+
+test('a greedy star prefers the body', () => {
+  const program = compile('a*');
+  const split = program.instructions.find((each) => each.op === Op.SPLIT);
+  assert.equal(program.at(split.x).op, Op.CHAR);
+});
+
+test('a lazy star prefers the exit', () => {
+  const program = compile('a*?');
+  const split = program.instructions.find((each) => each.op === Op.SPLIT);
+  assert.notEqual(program.at(split.x).op, Op.CHAR);
+});
+
+test('a greedy plus loops back from the split', () => {
+  const program = compile('a+');
+  const split = program.instructions.find((each) => each.op === Op.SPLIT);
+  assert.ok(split.x < split.y);
+});
+
+test('a lazy plus leaves first', () => {
+  const program = compile('a+?');
+  const split = program.instructions.find((each) => each.op === Op.SPLIT);
+  assert.ok(split.x > split.y);
+});
+
+// ---- every target is real ----
+
+test('every jump and split points inside the program', () => {
+  for (const pattern of ['a|b', 'a*', '(ab|cd)+e', 'a{2,4}', '(a|b|c)*d']) {
+    const program = compile(pattern);
+    for (const instruction of program.instructions) {
+      if (instruction.op === Op.JMP) {
+        assert.ok(program.at(instruction.target), `${pattern}: jmp to nowhere`);
+      }
+      if (instruction.op === Op.SPLIT) {
+        assert.ok(program.at(instruction.x), `${pattern}: split x to nowhere`);
+        assert.ok(program.at(instruction.y), `${pattern}: split y to nowhere`);
+      }
+    }
+  }
+});
+
+test('no target is left unpatched', () => {
+  for (const pattern of ['a|b|c', '(a|b)*', 'a{1,3}', 'a??']) {
+    for (const instruction of compile(pattern).instructions) {
+      if (instruction.op === Op.SPLIT) {
+        assert.notEqual(instruction.x, null, pattern);
+        assert.notEqual(instruction.y, null, pattern);
+      }
+      if (instruction.op === Op.JMP) assert.notEqual(instruction.target, null, pattern);
+    }
+  }
+});
+
+// ---- flags ----
