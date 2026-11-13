@@ -102,3 +102,65 @@ export function childrenOf(node) {
       return [];
   }
 }
+
+/** Visits every node, parents before children. */
+export function walk(node, visit, depth = 0) {
+  visit(node, depth);
+  for (const child of childrenOf(node)) walk(child, visit, depth + 1);
+}
+
+/** How many nodes the tree holds. */
+export function sizeOf(node) {
+  let count = 0;
+  walk(node, () => {
+    count += 1;
+  });
+  return count;
+}
+
+/** How deeply the tree nests. */
+export function depthOf(node) {
+  let deepest = 0;
+  walk(node, (unused, depth) => {
+    deepest = Math.max(deepest, depth);
+  });
+  return deepest + 1;
+}
+
+/** Every capturing group in the tree, by index. */
+export function groupsOf(node) {
+  const groups = [];
+  walk(node, (each) => {
+    if (each.type === NodeType.GROUP && each.index !== null) groups.push(each);
+  });
+  return groups.sort((a, b) => a.index - b.index);
+}
+
+/**
+ * Whether a node can match the empty string.
+ *
+ * This is what makes `(a*)*` worth warning about and what stops the VM from
+ * looping for ever on it, so it is computed on the tree rather than guessed
+ * at while matching.
+ */
+export function isNullable(node) {
+  switch (node.type) {
+    case NodeType.EMPTY:
+    case NodeType.ANCHOR:
+      return true;
+    case NodeType.LITERAL:
+    case NodeType.CLASS:
+    case NodeType.ANY:
+      return false;
+    case NodeType.CONCAT:
+      return node.parts.every((part) => isNullable(part));
+    case NodeType.ALTERNATE:
+      return node.options.some((option) => isNullable(option));
+    case NodeType.REPEAT:
+      return node.min === 0 || isNullable(node.node);
+    case NodeType.GROUP:
+      return isNullable(node.node);
+    default:
+      return false;
+  }
+}
