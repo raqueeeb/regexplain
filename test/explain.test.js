@@ -135,3 +135,67 @@ test('an alternation says that the order matters', () => {
 });
 
 // ---- the outline ----
+
+test('an outline has one line per node', () => {
+  const tree = parse('(ab)+');
+  let nodes = 0;
+  walk(tree, () => {
+    nodes += 1;
+  });
+  assert.equal(outline(tree).length, nodes);
+});
+
+test('an outline indents children under their parent', () => {
+  const lines = outline(parse('(a)'));
+  assert.equal(lines[0].startsWith(' '), false);
+  assert.equal(lines[1].startsWith('  '), true);
+});
+
+// ---- nothing is left unexplained ----
+
+test('every node type has wording of its own', () => {
+  const patterns = ['', 'a', '\\d', '.', '^', 'ab', 'a|b', 'a*', '(a)'];
+  const seen = new Set();
+
+  for (const pattern of patterns) {
+    walk(parse(pattern), (node) => {
+      seen.add(node.type);
+      const text = summarise(node);
+      assert.notEqual(text, node.type, `${node.type} is explained by its own name`);
+    });
+  }
+
+  for (const type of Object.values(NodeType)) {
+    assert.ok(seen.has(type), `${type} is never exercised`);
+  }
+});
+
+test('a realistic pattern explains without throwing', () => {
+  const patterns = [
+    '^(?<user>[\\w.+-]+)@(?<host>[\\w-]+\\.[a-z]{2,})$',
+    '^#(?:[0-9a-f]{3}|[0-9a-f]{6})$',
+    '\\b\\d{1,3}(?:,\\d{3})*(?:\\.\\d+)?\\b',
+    '(?:\\r?\\n)+',
+    '[^\\s"]+|"[^"]*"',
+  ];
+
+  for (const pattern of patterns) {
+    const text = said(pattern);
+    assert.equal(typeof text, 'string');
+    assert.ok(text.length > 10, pattern);
+  }
+});
+
+// ---- flags ----
+
+test('each flag is explained', () => {
+  const explained = explainFlags('ism');
+  assert.equal(explained.length, 3);
+  assert.match(explained[0].means, /either case/);
+  assert.match(explained[1].means, /newline/);
+  assert.match(explained[2].means, /every line/);
+});
+
+test('no flags explains to nothing', () => {
+  assert.deepEqual(explainFlags(''), []);
+});
