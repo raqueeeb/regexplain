@@ -32,3 +32,44 @@ export function normalize(ranges) {
 
   return merged;
 }
+
+/** Whether a code point is in a set, by binary search. */
+export function contains(ranges, code) {
+  let low = 0;
+  let high = ranges.length - 1;
+
+  while (low <= high) {
+    const middle = (low + high) >> 1;
+    const [lo, hi] = ranges[middle];
+    if (code < lo) high = middle - 1;
+    else if (code > hi) low = middle + 1;
+    else return true;
+  }
+
+  return false;
+}
+
+/** The complement of a set over the whole code-point space. */
+export function invert(ranges) {
+  const sorted = normalize(ranges);
+  const out = [];
+  let next = 0;
+
+  for (const [lo, hi] of sorted) {
+    if (lo > next) out.push([next, lo - 1]);
+    next = hi + 1;
+  }
+  if (next <= MAX_CODE_POINT) out.push([next, MAX_CODE_POINT]);
+
+  return out;
+}
+
+/** The union of two sets. */
+export function union(left, right) {
+  return normalize([...left, ...right]);
+}
+
+/** How many code points a set holds. */
+export function size(ranges) {
+  return ranges.reduce((total, [lo, hi]) => total + (hi - lo + 1), 0);
+}
