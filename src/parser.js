@@ -19,3 +19,6 @@ export const MAX_DEPTH = 64;
 
 /** The largest repetition count `{n,m}` may name. */
 export const MAX_REPEAT = 1000;
+
+/** The characters that cannot stand alone as a literal. */
+const SPECIAL = new Set(['|', '*', '+', '?', '(', ')', '[', ']', '{', '}', '^', '$', '.', '\\']);
