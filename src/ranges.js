@@ -73,3 +73,66 @@ export function union(left, right) {
 export function size(ranges) {
   return ranges.reduce((total, [lo, hi]) => total + (hi - lo + 1), 0);
 }
+
+/** A character for printing, with the awkward ones escaped. */
+export function describeCode(code) {
+  const named = {
+    9: '\\t',
+    10: '\\n',
+    13: '\\r',
+    11: '\\v',
+    12: '\\f',
+    0: '\\0',
+    32: 'space',
+  };
+  if (named[code] !== undefined) return named[code];
+  if (code < 32 || code === 127) return `\\x${code.toString(16).padStart(2, '0')}`;
+  return String.fromCodePoint(code);
+}
+
+/** A set as a readable summary, such as `a-z, 0-9, _`. */
+export function describe(ranges) {
+  if (ranges.length === 0) return 'nothing';
+
+  return ranges
+    .map(([lo, hi]) => {
+      if (lo === hi) return describeCode(lo);
+      // A range of two is clearer written out than as a range.
+      if (hi - lo === 1) return `${describeCode(lo)}, ${describeCode(hi)}`;
+      return `${describeCode(lo)}-${describeCode(hi)}`;
+    })
+    .join(', ');
+}
+
+/** The named classes, which both the parser and the explainer need. */
+export const NAMED = {
+  d: { ranges: [range('0', '9')], about: 'a digit' },
+  w: {
+    ranges: normalize([range('a', 'z'), range('A', 'Z'), range('0', '9'), range('_')]),
+    about: 'a word character',
+  },
+  s: {
+    ranges: normalize([
+      range(9, 13),
+      range(32),
+      range(0xa0),
+      range(0x1680),
+      range(0x2000, 0x200a),
+      range(0x2028, 0x2029),
+      range(0x202f),
+      range(0x205f),
+      range(0x3000),
+      range(0xfeff),
+    ]),
+    about: 'whitespace',
+  },
+};
+
+/** The set a named class stands for, negated when the letter is upper-case. */
+export function namedClass(letter) {
+  const lower = letter.toLowerCase();
+  const named = NAMED[lower];
+  if (!named) return null;
+  const negated = letter !== lower;
+  return { ranges: named.ranges, negated, about: negated ? `not ${named.about}` : named.about };
+}
