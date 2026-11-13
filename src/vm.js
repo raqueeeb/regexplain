@@ -242,3 +242,8 @@ export class Machine {
     };
   }
 }
+
+/** Whether a character counts as a word character. */
+export function isWord(character) {
+  return character !== null && character !== undefined && WORD.test(character);
+}
