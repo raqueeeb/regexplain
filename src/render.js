@@ -1,0 +1,51 @@
+/**
+ * Terminal output.
+ *
+ * Everything a command prints is built here, so the commands themselves are
+ * about what to say and this file is about how it looks. Colour is optional
+ * and off whenever output is not a terminal, because a pipe full of escape
+ * codes is nobody's idea of a result.
+ */
+
+import { describe } from './ranges.js';
+import { Program } from './program.js';
+import { childrenOf } from './ast.js';
+import { sentence, summarise } from './explain.js';
+
+/** The escape codes, or nothing at all when colour is off. */
+export function palette(colour) {
+  const code = (open) => (text) => (colour ? `\u001b[${open}m${text}\u001b[0m` : String(text));
+  return {
+    bold: code('1'),
+    dim: code('2'),
+    red: code('31'),
+    green: code('32'),
+    yellow: code('33'),
+    blue: code('36'),
+    plain: (text) => String(text),
+  };
+}
+
+/**
+ * The tree as box-drawing lines.
+ *
+ * The last child of a node gets a corner and the others get a tee, and a
+ * child's own children are indented under a bar only while the branch above
+ * them continues. Getting that right is the difference between a tree you
+ * can follow and a list of dashes.
+ */
+export function treeLines(node, prefix = '', isLast = true, isRoot = true) {
+  const lines = [];
+  const connector = isRoot ? '' : `${isLast ? '└─ ' : '├─ '}`;
+  lines.push(`${prefix}${connector}${summarise(node)}`);
+
+  const children = childrenOf(node);
+  const childPrefix = isRoot ? '' : `${prefix}${isLast ? '   ' : '│  '}`;
+
+  children.forEach((child, index) => {
+    lines.push(...treeLines(child, childPrefix, index === children.length - 1, false));
+  });
+
+  return lines;
+}
+)}
