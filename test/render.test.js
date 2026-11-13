@@ -70,4 +70,40 @@ test('nothing leaks colour into output that did not ask for it', () => {
 test('short text is one line', () => {
   assert.deepEqual(wrap('a b c', 10), ['a b c']);
 });
+
+test('long text breaks on spaces', () => {
+  const lines = wrap('one two three four five', 9);
+  assert.ok(lines.every((line) => line.length <= 9));
+  assert.equal(lines.join(' '), 'one two three four five');
+});
+
+test('a word longer than the width is not broken', () => {
+  assert.deepEqual(wrap('antidisestablishmentarianism', 5), ['antidisestablishmentarianism']);
+});
+
+test('wrapping nothing gives nothing', () => {
+  assert.deepEqual(wrap('', 10), []);
+});
+
+test('runs of whitespace collapse', () => {
+  assert.deepEqual(wrap('a    b', 10), ['a b']);
+});
+
+// ---- tables ----
+
+test('a table lines its columns up', () => {
+  const text = table([['a', 'x'], ['bbb', 'y']]);
+  const [first, second] = text.split('\n');
+  assert.equal(first.indexOf('x'), second.indexOf('y'));
+});
+
+test('a table never leaves trailing spaces on a line', () => {
+  const text = table([['a', 'x'], ['bbb', 'y']]);
+  for (const line of text.split('\n')) assert.equal(line, line.trimEnd());
+});
+
+test('a table can align a column to the right', () => {
+  const text = table([['1', 'a'], ['100', 'b']], { align: ['right'] });
+  assert.ok(text.split('\n')[0].startsWith('  1'));
+});
 ))
