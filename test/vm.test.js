@@ -92,3 +92,42 @@ test('an exact count matches exactly that many', () => {
   assert.equal(found('a{2}', 'aaaa'), 'aa');
   assert.equal(found('a{5}', 'aaaa'), null);
 });
+
+test('a counted range prefers the longest within it', () => {
+  assert.equal(found('a{2,3}', 'aaaa'), 'aaa');
+  assert.equal(found('a{2,3}?', 'aaaa'), 'aa');
+});
+
+test('an open-ended count has no upper limit', () => {
+  assert.equal(found('a{2,}', 'aaaaa'), 'aaaaa');
+  assert.equal(found('a{2,}', 'a'), null);
+});
+
+test('a quantified group repeats the whole group', () => {
+  assert.equal(found('(ab)+', 'ababab'), 'ababab');
+  assert.equal(found('(?:ab)+', 'ababX'), 'abab');
+});
+
+// ---- alternation ----
+
+test('an alternation matches either side', () => {
+  assert.equal(found('cat|dog', 'a dog'), 'dog');
+  assert.equal(found('cat|dog', 'a cat'), 'cat');
+});
+
+test('an alternation prefers the earlier option, even when it is shorter', () => {
+  // This is leftmost-first, not leftmost-longest: the order of the options
+  // in the pattern decides.
+  assert.equal(found('a|ab', 'ab'), 'a');
+  assert.equal(found('ab|a', 'ab'), 'ab');
+});
+
+test('an alternation inside a concatenation only covers its own part', () => {
+  assert.equal(found('^(a|b)c$', 'bc'), 'bc');
+});
+
+test('an empty option can match nothing', () => {
+  assert.equal(found('x(a|)y', 'xy'), 'xy');
+});
+
+// ---- classes ----
