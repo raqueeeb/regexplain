@@ -337,3 +337,5 @@ export function startsAnchored(node) {
       return false;
   }
 }
+
+export { PatternError, parse };
