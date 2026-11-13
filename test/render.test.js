@@ -1,0 +1,73 @@
+/**
+ * The output.
+ *
+ * Terminal output is easy to break and hard to notice breaking, so the
+ * things that have actually gone wrong are the things tested here: colour
+ * leaking into a pipe, a table with a ragged last column, and a tree whose
+ * branches do not line up.
+ */
+
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+import {
+  caret,
+  heading,
+  palette,
+  renderAnalysis,
+  renderMatch,
+  renderProgram,
+  renderSentence,
+  renderTrace,
+  renderTree,
+  table,
+  treeLines,
+  wrap,
+} from '../src/render.js';
+import { analyse } from '../src/analyse.js';
+import { compile } from '../src/compile.js';
+import { parse } from '../src/parser.js';
+import { search } from '../src/vm.js';
+
+/** Whether text holds an escape sequence. */
+const coloured = (text) => text.includes('\u001b[');
+
+// ---- colour ----
+
+test('colour is off when it is not asked for', () => {
+  const paint = palette(false);
+  assert.equal(paint.red('x'), 'x');
+  assert.equal(paint.bold('x'), 'x');
+});
+
+test('colour is escape codes when it is asked for', () => {
+  const paint = palette(true);
+  assert.ok(coloured(paint.red('x')));
+  assert.ok(paint.red('x').endsWith('\u001b[0m'));
+});
+
+test('plain text is never coloured', () => {
+  assert.equal(palette(true).plain('x'), 'x');
+});
+
+test('nothing leaks colour into output that did not ask for it', () => {
+  const program = compile('(a+)+b');
+  const pieces = [
+    renderTree(parse('a|b')),
+    renderProgram(program, false),
+    renderMatch(search(program, 'aab'), 'aab', false),
+    renderTrace(search(program, 'aab', { trace: true }), 'aab', false),
+    renderAnalysis(analyse(parse('(a+)+b'), program), false),
+    heading('x', false),
+    caret('ab', 1, false),
+  ];
+
+  for (const piece of pieces) assert.ok(!coloured(piece), piece.slice(0, 40));
+});
+
+// ---- wrapping ----
+
+test('short text is one line', () => {
+  assert.deepEqual(wrap('a b c', 10), ['a b c']);
+});
+))
