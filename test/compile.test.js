@@ -238,3 +238,46 @@ test('consuming instructions are the ones that read input', () => {
   assert.ok(!consumes(Op.SPLIT));
   assert.ok(!consumes(Op.SAVE));
 });
+
+test('a disassembly has one line per instruction', () => {
+  const program = compile('a|b');
+  assert.equal(program.disassemble().split('\n').length, program.length);
+});
+
+test('a disassembly names each opcode', () => {
+  const text = compile('[a-z]+').disassemble((ranges) => `${ranges.length}`);
+  assert.match(text, /class/);
+  assert.match(text, /split/);
+  assert.match(text, /match/);
+});
+
+test('a program turns into plain data for JSON output', () => {
+  const data = compile('a+', 'i').toJSON();
+  assert.equal(data.source, 'a+');
+  assert.equal(data.flags, 'i');
+  assert.ok(Array.isArray(data.instructions));
+});
+
+test('a program can be built from a tree that was parsed elsewhere', () => {
+  const program = compileTree(parse('ab'), { source: 'ab' });
+  assert.ok(program instanceof Program);
+  assert.equal(program.source, 'ab');
+});
+
+test('a compiler can be used directly', () => {
+  const compiler = new Compiler(normalizeFlags(''), 'a');
+  const program = compiler.run(parse('a'), { source: 'a' });
+  assert.equal(program.length, 4);
+});
+
+// ---- limits ----
+
+test('a pattern that would compile to an enormous program is refused', () => {
+  // 1000 copies of a 30-instruction body is past the ceiling, and finding
+  // that out at compile time is much better than at match time.
+  assert.throws(() => compile(`(abcdefghij){1000}{1000}`), PatternError);
+});
+
+test('a large but reasonable count compiles', () => {
+  assert.ok(compile('a{500}').length > 500);
+});
