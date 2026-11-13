@@ -48,4 +48,21 @@ export function treeLines(node, prefix = '', isLast = true, isRoot = true) {
 
   return lines;
 }
+
+/** The tree as a box-drawing outline. */
+export function renderTree(tree) {
+  return treeLines(tree).join('\n');
+}
+
+/** A heading with a rule under it. */
+export function heading(text, colour) {
+  const paint = palette(colour);
+  return `${paint.bold(text)}\n${paint.dim('─'.repeat(text.length))}`;
+}
+
+/** The pattern with a caret under one offset. */
+export function caret(pattern, offset, colour) {
+  const paint = palette(colour);
+  return `  ${pattern}\n  ${' '.repeat(Math.max(0, offset))}${paint.red('^')}`;
+}
 )}
