@@ -1,0 +1,18 @@
+{
+  "name": "regexplain",
+  "version": "1.0.0",
+  "description": "A regular expression engine that explains itself: a Pike VM with a linear-time guarantee, and a CLI that shows the program, the threads and the cost.",
+  "license": "MIT",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": { ".": "./src/index.js" },
+  "bin": { "regexplain": "bin/regexplain.js" },
+  "engines": { "node": ">=20" },
+  "files": ["bin", "src", "README.md", "LICENSE"],
+  "keywords": ["regex", "regexp", "explain", "pike-vm", "thompson", "cli", "linear-time"],
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "lint": "node tools/lint.js",
+    "check": "npm run lint && npm test"
+  }
+}
