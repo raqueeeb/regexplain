@@ -141,3 +141,14 @@ export function findings(tree) {
 
   return out;
 }
+
+/** A quantifier as it was written, for a message. */
+export function describeQuantifier(node) {
+  const { min, max } = node;
+  if (min === 0 && max === null) return '*';
+  if (min === 1 && max === null) return '+';
+  if (min === 0 && max === 1) return '?';
+  if (max === null) return `{${min},}`;
+  if (min === max) return `{${min}}`;
+  return `{${min},${max}}`;
+}
