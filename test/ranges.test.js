@@ -86,3 +86,47 @@ test('a character in a range is in the set', () => {
 test('a character outside every range is not', () => {
   assert.ok(!contains([range('a', 'z')], 'A'.codePointAt(0)));
 });
+
+test('both ends of a range are in it', () => {
+  const ranges = [range('a', 'z')];
+  assert.ok(contains(ranges, 'a'.codePointAt(0)));
+  assert.ok(contains(ranges, 'z'.codePointAt(0)));
+});
+
+test('nothing is in the empty set', () => {
+  assert.ok(!contains([], 97));
+});
+
+test('membership works across many ranges, which is the binary search', () => {
+  const ranges = normalize(
+    Array.from({ length: 50 }, (unused, index) => range(index * 4, index * 4 + 1)),
+  );
+  assert.ok(contains(ranges, 100));
+  assert.ok(!contains(ranges, 102));
+});
+
+// ---- set operations ----
+
+test('a union merges both sides', () => {
+  assert.deepEqual(union([range('a', 'c')], [range('b', 'e')]), [[97, 101]]);
+});
+
+test('a complement covers everything the set does not', () => {
+  const inverted = invert([range('a', 'z')]);
+  assert.ok(contains(inverted, 'A'.codePointAt(0)));
+  assert.ok(!contains(inverted, 'm'.codePointAt(0)));
+});
+
+test('a complement reaches the top of the code-point space', () => {
+  const inverted = invert([range('a')]);
+  assert.equal(inverted[inverted.length - 1][1], MAX_CODE_POINT);
+});
+
+test('a complement of a complement is the original set', () => {
+  const original = normalize([range('a', 'c'), range('x', 'z')]);
+  assert.deepEqual(invert(invert(original)), original);
+});
+
+test('the complement of nothing is everything', () => {
+  assert.deepEqual(invert([]), [[0, MAX_CODE_POINT]]);
+});
