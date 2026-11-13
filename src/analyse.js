@@ -152,3 +152,48 @@ export function describeQuantifier(node) {
   if (min === max) return `{${min}}`;
   return `{${min},${max}}`;
 }
+
+/** The whole report: size, bounds and findings. */
+export function analyse(tree, program) {
+  const histogram = program.histogram();
+  const consuming = (histogram[Op.CHAR] ?? 0) + (histogram[Op.CLASS] ?? 0) + (histogram[Op.ANY] ?? 0);
+
+  return {
+    source: program.source,
+    flags: program.flags,
+    instructions: program.length,
+    consuming,
+    splits: histogram[Op.SPLIT] ?? 0,
+    saves: histogram[Op.SAVE] ?? 0,
+    asserts: histogram[Op.ASSERT] ?? 0,
+    groups: program.groups,
+    anchoredStart: program.anchoredStart,
+    nodes: countNodes(tree),
+    firstSet: firstSetSize(tree),
+    nullable: isNullable(tree),
+    findings: findings(tree),
+  };
+}
+
+/** How many nodes the tree holds, by type. */
+export function countNodes(tree) {
+  const counts = {};
+  let total = 0;
+
+  walk(tree, (node) => {
+    counts[node.type] = (counts[node.type] ?? 0) + 1;
+    total += 1;
+  });
+
+  return { total, byType: counts };
+}
+
+/**
+ * The work this engine will do, as a bound rather than a measurement.
+ *
+ * `instructions x characters` is the honest worst case: each input position
+ * can add each instruction to the thread list at most once.
+ */
+export function bound(program, inputLength) {
+  return program.length * (inputLength + 1);
+}
