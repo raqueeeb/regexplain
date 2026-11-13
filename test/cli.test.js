@@ -210,3 +210,48 @@ test('all lists every match', () => {
 test('all says one match in the singular', () => {
   assert.match(invoke('all', '\\d+', 'a1').out, /1 match\b/);
 });
+
+test('all exits one when there is nothing to list', () => {
+  const result = invoke('all', 'z', 'abc');
+  assert.equal(result.code, 1);
+  assert.match(result.out, /no match/);
+});
+
+test('all as json counts what it found', () => {
+  const data = JSON.parse(invoke('all', 'a', 'aaa', '--json').out);
+  assert.equal(data.count, 3);
+});
+
+// ---- trace ----
+
+test('trace prints the thread list per position', () => {
+  const result = invoke('trace', 'a+b', 'aab');
+  assert.equal(result.code, 0);
+  assert.match(result.out, /program counters/);
+  assert.match(result.out, /thread additions/);
+});
+
+test('trace ends with the result of the match', () => {
+  assert.match(invoke('trace', 'a', 'a').out, /match at 0–1/);
+});
+
+test('trace as json carries each step', () => {
+  const data = JSON.parse(invoke('trace', 'a', 'a', '--json').out);
+  assert.ok(Array.isArray(data.trace));
+  assert.equal(data.trace[0].position, 0);
+});
+
+// ---- compile ----
+
+test('compile disassembles the program', () => {
+  const result = invoke('compile', 'a|b');
+  assert.equal(result.code, 0);
+  assert.match(result.out, /split/);
+  assert.match(result.out, /match/);
+  assert.match(result.out, /instructions/);
+});
+
+test('compile counts the capturing groups in the singular and the plural', () => {
+  assert.match(invoke('compile', '(a)').out, /1 capturing group\b/);
+  assert.match(invoke('compile', '(a)(b)').out, /2 capturing groups/);
+});
