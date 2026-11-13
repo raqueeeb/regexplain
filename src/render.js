@@ -65,4 +65,44 @@ export function caret(pattern, offset, colour) {
   const paint = palette(colour);
   return `  ${pattern}\n  ${' '.repeat(Math.max(0, offset))}${paint.red('^')}`;
 }
+
+/** A table from rows of cells, padded into columns. */
+export function table(rows, options = {}) {
+  if (rows.length === 0) return '';
+  const widths = [];
+
+  for (const row of rows) {
+    row.forEach((cell, index) => {
+      widths[index] = Math.max(widths[index] ?? 0, String(cell).length);
+    });
+  }
+
+  const align = options.align ?? [];
+  return rows
+    .map((row) =>
+      row
+        .map((cell, index) => {
+          const text = String(cell);
+          // The last column is never padded: trailing spaces on a line are
+          // invisible and only make the output harder to diff.
+          if (index === row.length - 1) return text;
+          return align[index] === 'right'
+            ? text.padStart(widths[index])
+            : text.padEnd(widths[index]);
+        })
+        .join(options.gap ?? '  ')
+        .trimEnd(),
+    )
+    .join('\n');
+}
+
+/** The disassembly, with classes described rather than counted. */
+export function renderProgram(program, colour) {
+  const paint = palette(colour);
+  const rows = program.instructions.map((instruction, index) => [
+    paint.dim(String(index).padStart(3)),
+    Program.show(instruction, (ranges) => describe(ranges)),
+  ]);
+  return table(rows);
+}
 )}
