@@ -335,3 +335,37 @@ export function traceCommand(pattern, text, options, out) {
   out(renderMatch(result, text, options.colour));
   return result.matched ? 0 : 1;
 }
+
+/** `compile` */
+export function compileCommand(pattern, options, out) {
+  const program = compile(pattern, options.flags);
+
+  if (options.json) {
+    out(JSON.stringify(program.toJSON(), null, 2));
+    return 0;
+  }
+
+  out(heading(`/${pattern}/${program.flags}`, options.colour));
+  out('');
+  out(renderProgram(program, options.colour));
+  out('');
+  out(`${program.length} instructions, ${program.groups} capturing group${program.groups === 1 ? '' : 's'}`);
+  return 0;
+}
+
+/** `cost` */
+export function costCommand(pattern, options, out) {
+  const tree = parse(pattern);
+  const program = compile(pattern, options.flags);
+  const report = analyse(tree, program);
+
+  if (options.json) {
+    out(JSON.stringify(report, null, 2));
+    return report.findings.some((each) => each.severity === 'warning') ? 1 : 0;
+  }
+
+  out(heading(`/${pattern}/${program.flags}`, options.colour));
+  out('');
+  out(renderAnalysis(report, options.colour));
+  return report.findings.some((each) => each.severity === 'warning') ? 1 : 0;
+}
