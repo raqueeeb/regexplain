@@ -51,3 +51,44 @@ test('a pattern matches the empty input when it can', () => {
 });
 
 // ---- the dot ----
+
+test('a dot matches any character but a newline', () => {
+  assert.equal(found('a.c', 'abc'), 'abc');
+  assert.equal(found('a.c', 'a c'), 'a c');
+  assert.equal(found('a.c', 'a\nc'), null);
+});
+
+test('the s flag lets a dot match a newline', () => {
+  assert.equal(found('a.c', 'a\nc', 's'), 'a\nc');
+});
+
+// ---- quantifiers ----
+
+test('a star matches nothing at all', () => {
+  assert.equal(found('xa*', 'x'), 'x');
+});
+
+test('a greedy quantifier takes as much as it can', () => {
+  assert.equal(found('a+', 'caaab'), 'aaa');
+  assert.equal(found('a*', 'aaa'), 'aaa');
+});
+
+test('a lazy quantifier takes as little as it can', () => {
+  assert.equal(found('a+?', 'caaab'), 'a');
+  assert.equal(found('a*?', 'aaa'), '');
+});
+
+test('greedy and lazy differ only in what they prefer, not in what they can match', () => {
+  assert.equal(found('<.+>', '<a><b>'), '<a><b>');
+  assert.equal(found('<.+?>', '<a><b>'), '<a>');
+});
+
+test('an optional part may be absent', () => {
+  assert.equal(found('colou?r', 'color'), 'color');
+  assert.equal(found('colou?r', 'colour'), 'colour');
+});
+
+test('an exact count matches exactly that many', () => {
+  assert.equal(found('a{2}', 'aaaa'), 'aa');
+  assert.equal(found('a{5}', 'aaaa'), null);
+});
