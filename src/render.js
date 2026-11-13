@@ -105,4 +105,103 @@ export function renderProgram(program, colour) {
   ]);
   return table(rows);
 }
+
+/** One match result. */
+export function renderMatch(result, input, colour) {
+  const paint = palette(colour);
+
+  if (!result.matched) {
+    return `${paint.red('no match')}`;
+  }
+
+  const characters = Array.from(input);
+  const before = characters.slice(0, result.index).join('');
+  const matched = characters.slice(result.index, result.end).join('');
+  const after = characters.slice(result.end).join('');
+
+  const lines = [
+    `${paint.green('match')} at ${result.index}–${result.end}`,
+    `  ${paint.dim(before)}${paint.bold(matched === '' ? '∅' : matched)}${paint.dim(after)}`,
+  ];
+
+  if (result.groups.length > 0) {
+    lines.push('');
+    const rows = [['group', 'span', 'text']];
+    for (const group of result.groups) {
+      const label = group.name ? `${group.index} (${group.name})` : String(group.index);
+      const span = group.start === null ? '—' : `${group.start}–${group.end}`;
+      const shown = group.text === null
+        ? paint.dim('did not take part')
+        : JSON.stringify(group.text);
+      rows.push([label, span, shown]);
+    }
+    lines.push(table(rows));
+  }
+
+  return lines.join('\n');
+}
+
+/** The thread list at each input position. */
+export function renderTrace(result, input, colour) {
+  const paint = palette(colour);
+  const rows = [['pos', 'char', 'threads', 'program counters']];
+
+  for (const step of result.trace) {
+    rows.push([
+      String(step.position),
+      step.character === null ? paint.dim('end') : JSON.stringify(step.character),
+      String(step.threads),
+      step.counters.join(' '),
+    ]);
+  }
+
+  const summary = [
+    '',
+    `${result.trace.length} positions, ${result.steps} thread additions, `
+      + `at most ${result.peakThreads} threads alive at once`,
+  ];
+
+  return [table(rows, { align: ['right', 'left', 'right'] }), ...summary].join('\n');
+}
+
+/** The cost report. */
+export function renderAnalysis(report, colour) {
+  const paint = palette(colour);
+
+  const rows = [
+    ['instructions', String(report.instructions)],
+    ['of which consume input', String(report.consuming)],
+    ['branches', String(report.splits)],
+    ['capture slots', String(report.saves)],
+    ['assertions', String(report.asserts)],
+    ['capturing groups', String(report.groups)],
+    ['tree nodes', String(report.nodes.total)],
+    ['anchored at the start', report.anchoredStart ? 'yes' : 'no'],
+    ['can match empty', report.nullable ? 'yes' : 'no'],
+  ];
+
+  const lines = [table(rows)];
+
+  lines.push(
+    '',
+    `Worst case here: ${report.instructions} instructions x (n + 1) steps, `
+      + 'which is linear in the length of the input.',
+  );
+
+  if (report.findings.length === 0) {
+    lines.push('', paint.green('nothing to warn about'));
+    return lines.join('\n');
+  }
+
+  lines.push('');
+  for (const finding of report.findings) {
+    const mark = finding.severity === 'warning' ? paint.yellow('warning') : paint.blue('note');
+    lines.push(`${mark}  ${finding.what}`);
+    if (finding.detail) lines.push(`         ${paint.dim(finding.detail)}`);
+    for (const line of wrap(finding.why, 68)) lines.push(`         ${line}`);
+    lines.push('');
+  }
+
+  return lines.join('\n').trimEnd();
+}
 )}
