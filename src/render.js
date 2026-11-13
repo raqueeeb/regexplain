@@ -204,4 +204,27 @@ export function renderAnalysis(report, colour) {
 
   return lines.join('\n').trimEnd();
 }
-)}
+
+/** The one-sentence explanation, wrapped. */
+export function renderSentence(tree, width = 72) {
+  return wrap(`This matches ${sentence(tree)}.`, width).join('\n');
+}
+
+/** Breaks text into lines no longer than a width, on spaces. */
+export function wrap(text, width) {
+  const words = String(text).split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = '';
+
+  for (const word of words) {
+    if (line === '') line = word;
+    else if (`${line} ${word}`.length <= width) line += ` ${word}`;
+    else {
+      lines.push(line);
+      line = word;
+    }
+  }
+  if (line !== '') lines.push(line);
+
+  return lines;
+}
