@@ -52,3 +52,39 @@ test('a concatenation of one collapses to the thing itself', () => {
 test('a dot is any character', () => {
   assert.equal(typeOf('.'), NodeType.ANY);
 });
+
+test('an alternation of one collapses too', () => {
+  assert.equal(typeOf('a'), NodeType.LITERAL);
+});
+
+test('an alternation keeps its options in order', () => {
+  const tree = parse('a|b|c');
+  assert.equal(tree.type, NodeType.ALTERNATE);
+  assert.deepEqual(tree.options.map((option) => option.char), ['a', 'b', 'c']);
+});
+
+test('an empty option in an alternation is the empty node', () => {
+  const tree = parse('a|');
+  assert.equal(tree.options[1].type, NodeType.EMPTY);
+});
+
+test('alternation binds loosest, so ab|cd is two pairs', () => {
+  const tree = parse('ab|cd');
+  assert.equal(tree.type, NodeType.ALTERNATE);
+  assert.equal(tree.options[0].type, NodeType.CONCAT);
+});
+
+// ---- anchors ----
+
+test('a caret is the start of the text', () => {
+  assert.equal(parse('^').kind, Anchor.START);
+});
+
+test('a dollar is the end of the text', () => {
+  assert.equal(parse('$').kind, Anchor.END);
+});
+
+test('a word boundary and its negation are anchors', () => {
+  assert.equal(parse('\\b').kind, Anchor.WORD_BOUNDARY);
+  assert.equal(parse('\\B').kind, Anchor.NOT_WORD_BOUNDARY);
+});
