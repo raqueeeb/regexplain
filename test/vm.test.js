@@ -251,3 +251,42 @@ test('a named group keeps its name in the result', () => {
 test('a non-capturing group captures nothing at all', () => {
   assert.deepEqual(captures('(?:ab)', 'ab'), []);
 });
+
+test('an optional group can capture the empty string, which is not nothing', () => {
+  assert.deepEqual(captures('a(b*)c', 'ac'), ['']);
+});
+
+// ---- several matches ----
+
+test('every match is found left to right', () => {
+  const all = searchAll(compile('\\d+'), 'a1 b22 c333');
+  assert.deepEqual(all.map((result) => result.text), ['1', '22', '333']);
+});
+
+test('matches do not overlap', () => {
+  const all = searchAll(compile('aa'), 'aaaa');
+  assert.deepEqual(all.map((result) => result.index), [0, 2]);
+});
+
+test('an empty match still moves forward rather than looping', () => {
+  const all = searchAll(compile('a*'), 'baa');
+  assert.deepEqual(all.map((result) => result.text), ['', 'aa', '']);
+});
+
+test('finding nothing gives an empty list', () => {
+  assert.deepEqual(searchAll(compile('z'), 'abc'), []);
+});
+
+// ---- test ----
+
+test('test answers only whether there is a match', () => {
+  assert.equal(matches(compile('a+'), 'xax'), true);
+  assert.equal(matches(compile('z'), 'xax'), false);
+});
+
+// ---- starting position ----
+
+test('a search can start part way through', () => {
+  const result = search(compile('a'), 'aXa', { start: 1 });
+  assert.equal(result.index, 2);
+});
