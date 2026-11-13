@@ -39,3 +39,14 @@ const ESCAPES = {
 export function parse(pattern) {
   return new Parser(String(pattern)).parse();
 }
+
+/** Whether a pattern parses, for callers that only want to know. */
+export function parses(pattern) {
+  try {
+    parse(pattern);
+    return true;
+  } catch (caught) {
+    if (caught instanceof PatternError) return false;
+    throw caught;
+  }
+}
