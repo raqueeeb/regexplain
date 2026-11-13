@@ -22,3 +22,15 @@ export const MAX_REPEAT = 1000;
 
 /** The characters that cannot stand alone as a literal. */
 const SPECIAL = new Set(['|', '*', '+', '?', '(', ')', '[', ']', '{', '}', '^', '$', '.', '\\']);
+
+/** The escapes that name a character rather than a class. */
+const ESCAPES = {
+  n: '\n',
+  r: '\r',
+  t: '\t',
+  f: '\f',
+  v: '\v',
+  0: '\0',
+  a: '\x07',
+  e: '\x1b',
+};
