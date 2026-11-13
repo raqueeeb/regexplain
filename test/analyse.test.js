@@ -132,3 +132,53 @@ test('a negated class can begin with almost anything', () => {
 });
 
 // ---- counting ----
+
+test('nodes are counted by type', () => {
+  const counts = countNodes(parse('a|b'));
+  assert.equal(counts.total, 3);
+  assert.equal(counts.byType.literal, 2);
+  assert.equal(counts.byType.alternate, 1);
+});
+
+// ---- the bound ----
+
+test('the bound is the program size times the input length', () => {
+  const program = compile('a+');
+  assert.equal(bound(program, 100), program.length * 101);
+});
+
+test('the real work never passes the bound', () => {
+  const pattern = '(a|aa)+b';
+  const input = 'a'.repeat(200);
+  const program = compile(pattern);
+  assert.ok(search(program, input).steps <= bound(program, input.length));
+});
+
+// ---- the whole report ----
+
+test('a report counts the instructions by kind', () => {
+  const result = report('(a)[b-d].');
+  assert.equal(result.groups, 1);
+  assert.equal(result.consuming, 3);
+  assert.equal(result.saves, 4);
+});
+
+test('a report says whether the pattern is anchored', () => {
+  assert.equal(report('^a').anchoredStart, true);
+  assert.equal(report('a').anchoredStart, false);
+});
+
+test('a report says whether the pattern can match nothing', () => {
+  assert.equal(report('a*').nullable, true);
+  assert.equal(report('a+').nullable, false);
+});
+
+test('a report carries the pattern and its flags', () => {
+  const result = report('a', 'i');
+  assert.equal(result.source, 'a');
+  assert.equal(result.flags, 'i');
+});
+
+test('a report of a safe pattern has no findings', () => {
+  assert.deepEqual(report('^[a-z]+$').findings, []);
+});
