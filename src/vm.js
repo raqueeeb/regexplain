@@ -255,3 +255,13 @@ function nameOf(names, index) {
   }
   return null;
 }
+
+/** Searches an input for the leftmost match. */
+export function search(program, input, options = {}) {
+  return new Machine(program, options).run(input, options.start ?? 0);
+}
+
+/** Whether a program matches anywhere in an input. */
+export function test(program, input) {
+  return search(program, input).matched;
+}
